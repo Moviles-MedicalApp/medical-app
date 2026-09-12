@@ -1,4 +1,4 @@
-package pe.com.smart.ui.components
+package pe.com.smart.core.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
