@@ -3,7 +3,7 @@ package pe.com.smart.core.network
 object ApiConstants {
 
     const val BASE_URL =
-        "http://10.0.2.2:4040"
+        "https://alexguevara.dev/api"
 
     const val AUTH_SERVER =
         "$BASE_URL/auth-server"
