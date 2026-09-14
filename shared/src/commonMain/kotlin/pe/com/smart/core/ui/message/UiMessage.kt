@@ -8,20 +8,32 @@ sealed class UiMessage(
     data class Success(
         override val title: String,
         override val message: String? = null
-    ) : UiMessage(title, message)
+    ) : UiMessage(
+        title = title,
+        message = message
+    )
 
     data class Error(
         override val title: String,
         override val message: String? = null
-    ) : UiMessage(title, message)
+    ) : UiMessage(
+        title = title,
+        message = message
+    )
 
     data class Info(
         override val title: String,
         override val message: String? = null
-    ) : UiMessage(title, message)
+    ) : UiMessage(
+        title = title,
+        message = message
+    )
 
     data class Warning(
         override val title: String,
         override val message: String? = null
-    ) : UiMessage(title, message)
+    ) : UiMessage(
+        title = title,
+        message = message
+    )
 }

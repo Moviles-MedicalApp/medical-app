@@ -3,9 +3,9 @@ package pe.com.smart.presentation.home
 data class HomeUiState(
     val username: String = "admin",
     val todayAppointments: Int = 0,
-    val patients: Int = 4,
-    val doctors: Int = 3,
-    val specialities: Int = 4,
+    val patients: Int = 0,
+    val doctors: Int = 0,
+    val specialities: Int = 0,
     val nextAppointment: AppointmentSummary? = null,
     val isLoading: Boolean = false,
     val error: String? = null

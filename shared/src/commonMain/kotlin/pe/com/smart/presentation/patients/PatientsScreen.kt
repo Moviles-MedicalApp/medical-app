@@ -2,6 +2,7 @@ package pe.com.smart.presentation.patients
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -11,12 +12,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.PersonAdd
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -39,21 +42,24 @@ fun PatientsScreen(
     viewModel.uiState
         .collectAsStateWithLifecycle()
 
-    /*
-     * Primera carga y recargas
-     * después de crear, editar o eliminar.
-     */
-    LaunchedEffect(refreshKey) {
-
+    LaunchedEffect(
+        refreshKey
+    ) {
         viewModel.loadPatients()
     }
 
     Box(
-        modifier = modifier.fillMaxSize()
+        modifier =
+            modifier.fillMaxSize()
     ) {
 
         when {
 
+            /*
+             * =================================================
+             * LOADING
+             * =================================================
+             */
             uiState.isLoading &&
                     uiState.patients.isEmpty() -> {
 
@@ -63,6 +69,11 @@ fun PatientsScreen(
                 )
             }
 
+            /*
+             * =================================================
+             * ERROR
+             * =================================================
+             */
             uiState.error != null &&
                     uiState.patients.isEmpty() -> {
 
@@ -76,6 +87,11 @@ fun PatientsScreen(
                 )
             }
 
+            /*
+             * =================================================
+             * CONTENIDO
+             * =================================================
+             */
             else -> {
 
                 LazyColumn(
@@ -87,7 +103,12 @@ fun PatientsScreen(
                             start = 16.dp,
                             end = 16.dp,
                             top = 16.dp,
-                            bottom = 100.dp
+
+                            /*
+                             * Espacio suficiente para
+                             * FAB + BottomBar.
+                             */
+                            bottom = 132.dp
                         ),
 
                     verticalArrangement =
@@ -96,6 +117,11 @@ fun PatientsScreen(
                         )
                 ) {
 
+                    /*
+                     * =========================================
+                     * BUSCADOR
+                     * =========================================
+                     */
                     item {
 
                         PatientSearchBar(
@@ -107,15 +133,45 @@ fun PatientsScreen(
                         )
                     }
 
-                    if (
-                        uiState.patients.isEmpty()
-                    ) {
+                    /*
+                     * =========================================
+                     * CONTADOR
+                     * =========================================
+                     */
+                    if (uiState.patients.isNotEmpty()) {
+
+                        item {
+
+                            PatientsCount(
+                                count =
+                                    uiState.patients.size,
+
+                                isSearching =
+                                    uiState.searchQuery
+                                        .isNotBlank()
+                            )
+                        }
+                    }
+
+                    /*
+                     * =========================================
+                     * VACÍO
+                     * =========================================
+                     */
+                    if (uiState.patients.isEmpty()) {
 
                         item {
 
                             AppEmptyState(
                                 title =
-                                    "Sin pacientes",
+                                    if (
+                                        uiState.searchQuery
+                                            .isBlank()
+                                    ) {
+                                        "Sin pacientes"
+                                    } else {
+                                        "Sin resultados"
+                                    },
 
                                 message =
                                     if (
@@ -124,13 +180,18 @@ fun PatientsScreen(
                                     ) {
                                         "No hay pacientes registrados."
                                     } else {
-                                        "No se encontraron coincidencias."
+                                        "No se encontraron pacientes que coincidan con la búsqueda."
                                     }
                             )
                         }
 
                     } else {
 
+                        /*
+                         * =====================================
+                         * LISTADO
+                         * =====================================
+                         */
                         items(
                             items =
                                 uiState.patients,
@@ -155,6 +216,11 @@ fun PatientsScreen(
                     }
                 }
 
+                /*
+                 * =================================================
+                 * NUEVO PACIENTE
+                 * =================================================
+                 */
                 ExtendedFloatingActionButton(
                     onClick =
                         onCreatePatientClick,
@@ -164,7 +230,10 @@ fun PatientsScreen(
                             .align(
                                 Alignment.BottomEnd
                             )
-                            .padding(16.dp),
+                            .padding(
+                                end = 16.dp,
+                                bottom = 16.dp
+                            ),
 
                     icon = {
 
@@ -181,11 +250,71 @@ fun PatientsScreen(
 
                         Text(
                             text =
-                                "Nuevo paciente"
+                                "Nuevo paciente",
+
+                            fontWeight =
+                                FontWeight.SemiBold
                         )
-                    }
+                    },
+
+                    containerColor =
+                        MaterialTheme.colorScheme.primaryContainer,
+
+                    contentColor =
+                        MaterialTheme.colorScheme.primary
                 )
             }
         }
+    }
+}
+
+
+/*
+ * =====================================================
+ * CONTADOR
+ * =====================================================
+ */
+
+@Composable
+private fun PatientsCount(
+    count: Int,
+    isSearching: Boolean
+) {
+
+    Column(
+        modifier =
+            Modifier.padding(
+                horizontal = 2.dp,
+                vertical = 2.dp
+            )
+    ) {
+
+        Text(
+            text =
+                when {
+
+                    isSearching &&
+                            count == 1 ->
+                        "1 resultado encontrado"
+
+                    isSearching ->
+                        "$count resultados encontrados"
+
+                    count == 1 ->
+                        "1 paciente registrado"
+
+                    else ->
+                        "$count pacientes registrados"
+                },
+
+            style =
+                MaterialTheme.typography.bodySmall,
+
+            fontWeight =
+                FontWeight.Medium,
+
+            color =
+                MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }

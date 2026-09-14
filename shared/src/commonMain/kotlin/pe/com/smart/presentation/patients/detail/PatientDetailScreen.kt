@@ -3,38 +3,46 @@ package pe.com.smart.presentation.patients.detail
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Badge
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material.icons.outlined.Phone
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import pe.com.smart.core.ui.AppConfirmDialog
 import pe.com.smart.core.ui.AppError
 import pe.com.smart.core.ui.AppLoading
-import pe.com.smart.core.ui.InfoRow
+import pe.com.smart.domain.model.Patient
 
 @Composable
 fun PatientDetailScreen(
@@ -47,13 +55,10 @@ fun PatientDetailScreen(
 
     val viewModel: PatientDetailViewModel =
         viewModel(
-            key =
-                "patient_detail_$patientId"
+            key = "patient_detail_$patientId"
         ) {
-
             PatientDetailViewModel(
-                patientId =
-                    patientId
+                patientId = patientId
             )
         }
 
@@ -66,15 +71,10 @@ fun PatientDetailScreen(
         mutableStateOf(false)
     }
 
-    /*
-     * Primera carga y recarga
-     * después de editar.
-     */
     LaunchedEffect(
         patientId,
         refreshKey
     ) {
-
         viewModel.loadPatient()
     }
 
@@ -85,15 +85,24 @@ fun PatientDetailScreen(
 
         when {
 
+            /*
+             * =================================================
+             * LOADING
+             * =================================================
+             */
             uiState.isLoading &&
                     uiState.patient == null -> {
 
                 AppLoading(
-                    message =
-                        "Cargando paciente..."
+                    message = "Cargando paciente..."
                 )
             }
 
+            /*
+             * =================================================
+             * ERROR
+             * =================================================
+             */
             uiState.error != null &&
                     uiState.patient == null -> {
 
@@ -107,234 +116,517 @@ fun PatientDetailScreen(
                 )
             }
 
+            /*
+             * =================================================
+             * CONTENIDO
+             * =================================================
+             */
             uiState.patient != null -> {
 
-                val patient =
-                    uiState.patient!!
-
-                Column(
-                    modifier =
-                        Modifier
-                            .fillMaxSize()
-                            .padding(20.dp),
-
-                    verticalArrangement =
-                        Arrangement.spacedBy(
-                            14.dp
+                PatientDetailContent(
+                    patient = uiState.patient!!,
+                    isDeleting = uiState.isDeleting,
+                    error = uiState.error,
+                    onEditClick = {
+                        onEditClick(
+                            uiState.patient!!.id
                         )
+                    },
+                    onDeleteClick = {
+                        showDeleteDialog = true
+                    }
+                )
+            }
+        }
+    }
+
+    /*
+     * =====================================================
+     * CONFIRMAR ELIMINACIÓN
+     * =====================================================
+     */
+    AppConfirmDialog(
+        visible =
+            showDeleteDialog,
+
+        title =
+            "Eliminar paciente",
+
+        message =
+            "¿Estás seguro de que deseas eliminar este paciente? Esta acción no se puede deshacer.",
+
+        confirmText =
+            "Eliminar",
+
+        cancelText =
+            "Cancelar",
+
+        loadingText =
+            "Eliminando...",
+
+        icon =
+            Icons.Outlined.Delete,
+
+        destructive =
+            true,
+
+        isLoading =
+            uiState.isDeleting,
+
+        onConfirm = {
+
+            viewModel.deletePatient(
+                onSuccess = {
+
+                    showDeleteDialog =
+                        false
+
+                    onDeleted()
+                }
+            )
+        },
+
+        onDismiss = {
+
+            showDeleteDialog =
+                false
+        }
+    )
+}
+
+
+/*
+ * =====================================================
+ * CONTENIDO DEL DETALLE
+ * =====================================================
+ */
+
+@Composable
+private fun PatientDetailContent(
+    patient: Patient,
+    isDeleting: Boolean,
+    error: String?,
+    onEditClick: () -> Unit,
+    onDeleteClick: () -> Unit
+) {
+
+    Column(
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .padding(
+                    horizontal = 20.dp,
+                    vertical = 20.dp
+                ),
+
+        verticalArrangement =
+            Arrangement.spacedBy(
+                20.dp
+            )
+    ) {
+
+        /*
+         * =================================================
+         * TARJETA PRINCIPAL
+         * =================================================
+         */
+        Card(
+            modifier =
+                Modifier.fillMaxWidth(),
+
+            shape =
+                RoundedCornerShape(
+                    22.dp
+                ),
+
+            colors =
+                CardDefaults.cardColors(
+                    containerColor =
+                        MaterialTheme.colorScheme.surface
+                ),
+
+            elevation =
+                CardDefaults.cardElevation(
+                    defaultElevation =
+                        3.dp
+                )
+        ) {
+
+            Column(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(
+                            20.dp
+                        ),
+
+                verticalArrangement =
+                    Arrangement.spacedBy(
+                        18.dp
+                    )
+            ) {
+
+                /*
+                 * =========================================
+                 * CABECERA
+                 * =========================================
+                 */
+                Row(
+                    modifier =
+                        Modifier.fillMaxWidth(),
+
+                    verticalAlignment =
+                        Alignment.CenterVertically
                 ) {
 
-                    Text(
-                        text =
-                            patient.fullName,
+                    Surface(
+                        modifier =
+                            Modifier.size(
+                                58.dp
+                            ),
 
-                        style =
-                            MaterialTheme.typography
-                                .headlineSmall,
+                        shape =
+                            CircleShape,
 
-                        fontWeight =
-                            FontWeight.Bold
+                        color =
+                            MaterialTheme.colorScheme
+                                .primaryContainer
+                    ) {
+
+                        Box(
+                            contentAlignment =
+                                Alignment.Center
+                        ) {
+
+                            Icon(
+                                imageVector =
+                                    Icons.Outlined.Badge,
+
+                                contentDescription =
+                                    null,
+
+                                modifier =
+                                    Modifier.size(
+                                        28.dp
+                                    ),
+
+                                tint =
+                                    MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+
+                    Spacer(
+                        modifier =
+                            Modifier.width(
+                                16.dp
+                            )
                     )
 
-                    InfoRow(
-                        icon =
-                            Icons.Outlined.Badge,
+                    Column(
+                        modifier =
+                            Modifier.weight(
+                                1f
+                            ),
 
-                        text =
-                            "DNI: ${patient.dni}"
-                    )
-
-                    InfoRow(
-                        icon =
-                            Icons.Outlined.Email,
-
-                        text =
-                            patient.email
-                    )
-
-                    InfoRow(
-                        icon =
-                            Icons.Outlined.Phone,
-
-                        text =
-                            patient.phone
-                    )
-
-                    /*
-                     * Si falla una recarga pero ya
-                     * tenemos datos anteriores,
-                     * mantenemos el contenido visible.
-                     */
-                    uiState.error?.let { error ->
+                        verticalArrangement =
+                            Arrangement.spacedBy(
+                                4.dp
+                            )
+                    ) {
 
                         Text(
-                            text = error,
+                            text =
+                                patient.fullName,
+
+                            style =
+                                MaterialTheme.typography
+                                    .titleLarge,
+
+                            fontWeight =
+                                FontWeight.Bold,
+
+                            color =
+                                MaterialTheme.colorScheme
+                                    .onSurface
+                        )
+
+                        Text(
+                            text =
+                                "DNI: ${patient.dni}",
 
                             style =
                                 MaterialTheme.typography
                                     .bodyMedium,
 
                             color =
-                                MaterialTheme.colorScheme.error
-                        )
-                    }
-
-                    Spacer(
-                        modifier =
-                            Modifier.height(8.dp)
-                    )
-
-                    Button(
-                        onClick = {
-
-                            onEditClick(
-                                patient.id
-                            )
-                        },
-
-                        enabled =
-                            !uiState.isDeleting,
-
-                        modifier =
-                            Modifier.fillMaxWidth()
-                    ) {
-
-                        Icon(
-                            imageVector =
-                                Icons.Outlined.Edit,
-
-                            contentDescription =
-                                null
-                        )
-
-                        Text(
-                            text =
-                                "  Editar paciente"
-                        )
-                    }
-
-                    OutlinedButton(
-                        onClick = {
-
-                            showDeleteDialog =
-                                true
-                        },
-
-                        enabled =
-                            !uiState.isDeleting,
-
-                        modifier =
-                            Modifier.fillMaxWidth()
-                    ) {
-
-                        Icon(
-                            imageVector =
-                                Icons.Outlined.Delete,
-
-                            contentDescription =
-                                null
-                        )
-
-                        Text(
-                            text =
-                                if (
-                                    uiState.isDeleting
-                                ) {
-                                    "  Eliminando..."
-                                } else {
-                                    "  Eliminar paciente"
-                                }
+                                MaterialTheme.colorScheme
+                                    .onSurfaceVariant
                         )
                     }
                 }
+
+                /*
+                 * =========================================
+                 * CONTACTO
+                 * =========================================
+                 */
+
+                PatientDetailRow(
+                    icon =
+                        Icons.Outlined.Email,
+
+                    label =
+                        "Correo electrónico",
+
+                    value =
+                        patient.email
+                )
+
+                PatientDetailRow(
+                    icon =
+                        Icons.Outlined.Phone,
+
+                    label =
+                        "Teléfono",
+
+                    value =
+                        patient.phone
+                )
             }
         }
-    }
 
-    if (showDeleteDialog) {
+        /*
+         * =================================================
+         * ERROR DE RECARGA
+         * =================================================
+         */
+        if (!error.isNullOrBlank()) {
 
-        AlertDialog(
-            onDismissRequest = {
+            Text(
+                text =
+                    error,
 
-                if (!uiState.isDeleting) {
+                style =
+                    MaterialTheme.typography.bodyMedium,
 
-                    showDeleteDialog =
-                        false
-                }
-            },
+                color =
+                    MaterialTheme.colorScheme.error
+            )
+        }
 
-            title = {
+        /*
+         * =================================================
+         * SECCIÓN DE ACCIONES
+         * =================================================
+         */
+        Text(
+            text =
+                "Acciones",
 
-                Text(
-                    text =
-                        "Eliminar paciente"
-                )
-            },
+            style =
+                MaterialTheme.typography.titleMedium,
 
-            text = {
+            fontWeight =
+                FontWeight.SemiBold,
 
-                Text(
-                    text =
-                        "¿Está seguro de eliminar este paciente? Esta acción no se puede deshacer."
-                )
-            },
-
-            confirmButton = {
-
-                TextButton(
-                    enabled =
-                        !uiState.isDeleting,
-
-                    onClick = {
-
-                        viewModel.deletePatient(
-
-                            onSuccess = {
-
-                                showDeleteDialog =
-                                    false
-
-                                onDeleted()
-                            }
-                        )
-                    }
-                ) {
-
-                    Text(
-                        text =
-                            if (
-                                uiState.isDeleting
-                            ) {
-                                "Eliminando..."
-                            } else {
-                                "Eliminar"
-                            },
-
-                        color =
-                            MaterialTheme.colorScheme.error
-                    )
-                }
-            },
-
-            dismissButton = {
-
-                TextButton(
-                    enabled =
-                        !uiState.isDeleting,
-
-                    onClick = {
-
-                        showDeleteDialog =
-                            false
-                    }
-                ) {
-
-                    Text(
-                        text =
-                            "Cancelar"
-                    )
-                }
-            }
+            color =
+                MaterialTheme.colorScheme.onBackground
         )
+
+        /*
+         * EDITAR
+         */
+        Button(
+            onClick =
+                onEditClick,
+
+            enabled =
+                !isDeleting,
+
+            modifier =
+                Modifier.fillMaxWidth(),
+
+            shape =
+                MaterialTheme.shapes.extraLarge
+        ) {
+
+            Icon(
+                imageVector =
+                    Icons.Outlined.Edit,
+
+                contentDescription =
+                    null
+            )
+
+            Spacer(
+                modifier =
+                    Modifier.width(
+                        8.dp
+                    )
+            )
+
+            Text(
+                text =
+                    "Editar paciente",
+
+                fontWeight =
+                    FontWeight.SemiBold
+            )
+        }
+
+        /*
+         * ELIMINAR
+         */
+        OutlinedButton(
+            onClick =
+                onDeleteClick,
+
+            enabled =
+                !isDeleting,
+
+            modifier =
+                Modifier.fillMaxWidth(),
+
+            shape =
+                MaterialTheme.shapes.extraLarge,
+
+            colors =
+                ButtonDefaults.outlinedButtonColors(
+                    contentColor =
+                        MaterialTheme.colorScheme.error
+                )
+        ) {
+
+            Icon(
+                imageVector =
+                    Icons.Outlined.Delete,
+
+                contentDescription =
+                    null
+            )
+
+            Spacer(
+                modifier =
+                    Modifier.width(
+                        8.dp
+                    )
+            )
+
+            Text(
+                text =
+                    if (isDeleting) {
+                        "Eliminando..."
+                    } else {
+                        "Eliminar paciente"
+                    },
+
+                fontWeight =
+                    FontWeight.SemiBold
+            )
+        }
+    }
+}
+
+
+/*
+ * =====================================================
+ * FILA DE INFORMACIÓN
+ * =====================================================
+ */
+
+@Composable
+private fun PatientDetailRow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    value: String
+) {
+
+    Row(
+        modifier =
+            Modifier.fillMaxWidth(),
+
+        verticalAlignment =
+            Alignment.CenterVertically
+    ) {
+
+        Surface(
+            modifier =
+                Modifier.size(
+                    42.dp
+                ),
+
+            shape =
+                RoundedCornerShape(
+                    12.dp
+                ),
+
+            color =
+                MaterialTheme.colorScheme
+                    .surfaceVariant
+        ) {
+
+            Box(
+                contentAlignment =
+                    Alignment.Center
+            ) {
+
+                Icon(
+                    imageVector =
+                        icon,
+
+                    contentDescription =
+                        null,
+
+                    modifier =
+                        Modifier.size(
+                            22.dp
+                        ),
+
+                    tint =
+                        MaterialTheme.colorScheme
+                            .onSurfaceVariant
+                )
+            }
+        }
+
+        Spacer(
+            modifier =
+                Modifier.width(
+                    14.dp
+                )
+        )
+
+        Column(
+            modifier =
+                Modifier.weight(
+                    1f
+                )
+        ) {
+
+            Text(
+                text =
+                    label,
+
+                style =
+                    MaterialTheme.typography.labelMedium,
+
+                color =
+                    MaterialTheme.colorScheme
+                        .onSurfaceVariant
+            )
+
+            Text(
+                text =
+                    value,
+
+                style =
+                    MaterialTheme.typography.bodyLarge,
+
+                color =
+                    MaterialTheme.colorScheme
+                        .onSurface
+            )
+        }
     }
 }

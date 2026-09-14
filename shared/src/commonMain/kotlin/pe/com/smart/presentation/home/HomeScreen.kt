@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -26,17 +27,22 @@ import androidx.compose.material.icons.outlined.People
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Composable
 fun HomeScreen(
@@ -46,16 +52,120 @@ fun HomeScreen(
     onSpecialitiesClick: () -> Unit,
     onNewAppointmentClick: () -> Unit,
     onCalendarClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    viewModel: HomeViewModel = viewModel()
+) {
+
+    val uiState by
+    viewModel.uiState
+        .collectAsStateWithLifecycle()
+
+    LaunchedEffect(Unit) {
+        viewModel.loadDashboard()
+    }
+
+    Box(
+        modifier =
+            modifier.fillMaxSize()
+    ) {
+
+        when {
+
+            /*
+             * =============================================
+             * CARGANDO
+             * =============================================
+             */
+            uiState.isLoading -> {
+
+                CircularProgressIndicator(
+                    modifier =
+                        Modifier.align(
+                            Alignment.Center
+                        )
+                )
+            }
+
+            /*
+             * =============================================
+             * ERROR
+             * =============================================
+             */
+            uiState.error != null -> {
+
+                HomeError(
+                    message =
+                        uiState.error
+                            ?: "No se pudo cargar la información.",
+
+                    onRetry =
+                        viewModel::retry,
+
+                    modifier =
+                        Modifier.align(
+                            Alignment.Center
+                        )
+                )
+            }
+
+            /*
+             * =============================================
+             * CONTENIDO
+             * =============================================
+             */
+            else -> {
+
+                HomeContent(
+                    uiState =
+                        uiState,
+
+                    onAppointmentsClick =
+                        onAppointmentsClick,
+
+                    onPatientsClick =
+                        onPatientsClick,
+
+                    onDoctorsClick =
+                        onDoctorsClick,
+
+                    onSpecialitiesClick =
+                        onSpecialitiesClick,
+
+                    onNewAppointmentClick =
+                        onNewAppointmentClick,
+
+                    onCalendarClick =
+                        onCalendarClick
+                )
+            }
+        }
+    }
+}
+
+
+/*
+ * =====================================================
+ * CONTENIDO PRINCIPAL
+ * =====================================================
+ */
+
+@Composable
+private fun HomeContent(
+    uiState: HomeUiState,
+    onAppointmentsClick: () -> Unit,
+    onPatientsClick: () -> Unit,
+    onDoctorsClick: () -> Unit,
+    onSpecialitiesClick: () -> Unit,
+    onNewAppointmentClick: () -> Unit,
+    onCalendarClick: () -> Unit
 ) {
 
     LazyColumn(
         modifier =
-            modifier
-                .fillMaxSize(),
+            Modifier.fillMaxSize(),
 
         contentPadding =
-            androidx.compose.foundation.layout.PaddingValues(
+            PaddingValues(
                 start = 16.dp,
                 end = 16.dp,
                 top = 20.dp,
@@ -74,7 +184,8 @@ fun HomeScreen(
         item {
 
             HomeGreeting(
-                username = "admin"
+                username =
+                    uiState.username
             )
         }
 
@@ -88,7 +199,8 @@ fun HomeScreen(
             Column {
 
                 SectionTitle(
-                    title = "Resumen"
+                    title =
+                        "Resumen"
                 )
 
                 Spacer(
@@ -105,19 +217,41 @@ fun HomeScreen(
                 ) {
 
                     SummaryCard(
-                        title = "Citas hoy",
-                        value = "0",
-                        icon = Icons.Outlined.CalendarMonth,
-                        modifier = Modifier.weight(1f),
-                        onClick = onAppointmentsClick
+                        title =
+                            "Citas hoy",
+
+                        value =
+                            uiState
+                                .todayAppointments
+                                .toString(),
+
+                        icon =
+                            Icons.Outlined.CalendarMonth,
+
+                        modifier =
+                            Modifier.weight(1f),
+
+                        onClick =
+                            onAppointmentsClick
                     )
 
                     SummaryCard(
-                        title = "Pacientes",
-                        value = "4",
-                        icon = Icons.Outlined.People,
-                        modifier = Modifier.weight(1f),
-                        onClick = onPatientsClick
+                        title =
+                            "Pacientes",
+
+                        value =
+                            uiState
+                                .patients
+                                .toString(),
+
+                        icon =
+                            Icons.Outlined.People,
+
+                        modifier =
+                            Modifier.weight(1f),
+
+                        onClick =
+                            onPatientsClick
                     )
                 }
 
@@ -135,19 +269,41 @@ fun HomeScreen(
                 ) {
 
                     SummaryCard(
-                        title = "Médicos",
-                        value = "3",
-                        icon = Icons.Outlined.MedicalServices,
-                        modifier = Modifier.weight(1f),
-                        onClick = onDoctorsClick
+                        title =
+                            "Médicos",
+
+                        value =
+                            uiState
+                                .doctors
+                                .toString(),
+
+                        icon =
+                            Icons.Outlined.MedicalServices,
+
+                        modifier =
+                            Modifier.weight(1f),
+
+                        onClick =
+                            onDoctorsClick
                     )
 
                     SummaryCard(
-                        title = "Especialidades",
-                        value = "4",
-                        icon = Icons.Outlined.LocalHospital,
-                        modifier = Modifier.weight(1f),
-                        onClick = onSpecialitiesClick
+                        title =
+                            "Especialidades",
+
+                        value =
+                            uiState
+                                .specialities
+                                .toString(),
+
+                        icon =
+                            Icons.Outlined.LocalHospital,
+
+                        modifier =
+                            Modifier.weight(1f),
+
+                        onClick =
+                            onSpecialitiesClick
                     )
                 }
             }
@@ -163,7 +319,8 @@ fun HomeScreen(
             Column {
 
                 SectionTitle(
-                    title = "Agenda de hoy"
+                    title =
+                        "Agenda de hoy"
                 )
 
                 Spacer(
@@ -172,6 +329,9 @@ fun HomeScreen(
                 )
 
                 TodayAgendaCard(
+                    appointmentCount =
+                        uiState.todayAppointments,
+
                     onClick =
                         onAppointmentsClick
                 )
@@ -188,7 +348,8 @@ fun HomeScreen(
             Column {
 
                 SectionTitle(
-                    title = "Próxima cita"
+                    title =
+                        "Próxima cita"
                 )
 
                 Spacer(
@@ -197,6 +358,9 @@ fun HomeScreen(
                 )
 
                 NextAppointmentCard(
+                    appointment =
+                        uiState.nextAppointment,
+
                     onClick =
                         onAppointmentsClick
                 )
@@ -213,7 +377,8 @@ fun HomeScreen(
             Column {
 
                 SectionTitle(
-                    title = "Acciones rápidas"
+                    title =
+                        "Acciones rápidas"
                 )
 
                 Spacer(
@@ -382,7 +547,8 @@ private fun SummaryCard(
                     color =
                         MaterialTheme.colorScheme.onSurfaceVariant,
 
-                    maxLines = 1,
+                    maxLines =
+                        1,
 
                     overflow =
                         TextOverflow.Ellipsis,
@@ -431,12 +597,13 @@ private fun SummaryCard(
 
 /*
  * =====================================================
- * AGENDA DEL DÍA
+ * AGENDA DE HOY
  * =====================================================
  */
 
 @Composable
 private fun TodayAgendaCard(
+    appointmentCount: Int,
     onClick: () -> Unit
 ) {
 
@@ -513,35 +680,70 @@ private fun TodayAgendaCard(
                     Modifier.height(14.dp)
             )
 
-            Text(
-                text =
-                    "Sin citas para hoy",
+            if (appointmentCount == 0) {
 
-                style =
-                    MaterialTheme.typography.titleMedium,
+                Text(
+                    text =
+                        "Sin citas para hoy",
 
-                fontWeight =
-                    FontWeight.Bold,
+                    style =
+                        MaterialTheme.typography.titleMedium,
 
-                color =
-                    MaterialTheme.colorScheme.onSurface
-            )
+                    fontWeight =
+                        FontWeight.Bold
+                )
 
-            Spacer(
-                modifier =
-                    Modifier.height(4.dp)
-            )
+                Spacer(
+                    modifier =
+                        Modifier.height(4.dp)
+                )
 
-            Text(
-                text =
-                    "La agenda del día está libre",
+                Text(
+                    text =
+                        "La agenda del día está libre",
 
-                style =
-                    MaterialTheme.typography.bodyMedium,
+                    style =
+                        MaterialTheme.typography.bodyMedium,
 
-                color =
-                    MaterialTheme.colorScheme.onSurfaceVariant
-            )
+                    color =
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+            } else {
+
+                Text(
+                    text =
+                        "$appointmentCount ${
+                            if (appointmentCount == 1) {
+                                "cita programada"
+                            } else {
+                                "citas programadas"
+                            }
+                        }",
+
+                    style =
+                        MaterialTheme.typography.titleMedium,
+
+                    fontWeight =
+                        FontWeight.Bold
+                )
+
+                Spacer(
+                    modifier =
+                        Modifier.height(4.dp)
+                )
+
+                Text(
+                    text =
+                        "Revisa la agenda del día",
+
+                    style =
+                        MaterialTheme.typography.bodyMedium,
+
+                    color =
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
     }
 }
@@ -555,6 +757,7 @@ private fun TodayAgendaCard(
 
 @Composable
 private fun NextAppointmentCard(
+    appointment: AppointmentSummary?,
     onClick: () -> Unit
 ) {
 
@@ -633,35 +836,83 @@ private fun NextAppointmentCard(
                     Modifier.weight(1f)
             ) {
 
-                Text(
-                    text =
-                        "No hay próximas citas",
+                if (appointment == null) {
 
-                    style =
-                        MaterialTheme.typography.titleMedium,
+                    Text(
+                        text =
+                            "No hay próximas citas",
 
-                    fontWeight =
-                        FontWeight.Bold,
+                        style =
+                            MaterialTheme.typography.titleMedium,
 
-                    color =
-                        MaterialTheme.colorScheme.onSurface
-                )
+                        fontWeight =
+                            FontWeight.Bold
+                    )
 
-                Spacer(
-                    modifier =
-                        Modifier.height(4.dp)
-                )
+                    Spacer(
+                        modifier =
+                            Modifier.height(4.dp)
+                    )
 
-                Text(
-                    text =
-                        "No hay atenciones pendientes registradas.",
+                    Text(
+                        text =
+                            "No hay atenciones pendientes registradas.",
 
-                    style =
-                        MaterialTheme.typography.bodyMedium,
+                        style =
+                            MaterialTheme.typography.bodyMedium,
 
-                    color =
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                        color =
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                } else {
+
+                    Text(
+                        text =
+                            appointment.time,
+
+                        style =
+                            MaterialTheme.typography.titleMedium,
+
+                        fontWeight =
+                            FontWeight.Bold,
+
+                        color =
+                            MaterialTheme.colorScheme.primary
+                    )
+
+                    Spacer(
+                        modifier =
+                            Modifier.height(4.dp)
+                    )
+
+                    Text(
+                        text =
+                            appointment.patientName,
+
+                        style =
+                            MaterialTheme.typography.bodyLarge,
+
+                        fontWeight =
+                            FontWeight.SemiBold
+                    )
+
+                    Spacer(
+                        modifier =
+                            Modifier.height(2.dp)
+                    )
+
+                    Text(
+                        text =
+                            "${appointment.speciality} · ${appointment.doctorName}",
+
+                        style =
+                            MaterialTheme.typography.bodyMedium,
+
+                        color =
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         }
     }
@@ -727,7 +978,7 @@ private fun QuickActions(
 
 /*
  * =====================================================
- * TARJETA DE ACCIÓN RÁPIDA
+ * ACCIÓN RÁPIDA
  * =====================================================
  */
 
@@ -742,10 +993,9 @@ private fun QuickActionCard(
 
     Card(
         modifier =
-            modifier
-                .clickable(
-                    onClick = onClick
-                ),
+            modifier.clickable(
+                onClick = onClick
+            ),
 
         shape =
             RoundedCornerShape(18.dp),
@@ -759,6 +1009,7 @@ private fun QuickActionCard(
         border =
             BorderStroke(
                 width = 1.dp,
+
                 color =
                     MaterialTheme.colorScheme.outlineVariant
             ),
@@ -821,10 +1072,7 @@ private fun QuickActionCard(
                     MaterialTheme.typography.titleSmall,
 
                 fontWeight =
-                    FontWeight.SemiBold,
-
-                color =
-                    MaterialTheme.colorScheme.onSurface
+                    FontWeight.SemiBold
             )
 
             Spacer(
@@ -843,5 +1091,77 @@ private fun QuickActionCard(
                     MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
+    }
+}
+
+
+/*
+ * =====================================================
+ * ERROR
+ * =====================================================
+ */
+
+@Composable
+private fun HomeError(
+    message: String,
+    onRetry: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+
+    Column(
+        modifier =
+            modifier.padding(24.dp),
+
+        horizontalAlignment =
+            Alignment.CenterHorizontally
+    ) {
+
+        Text(
+            text =
+                "No se pudo cargar el resumen",
+
+            style =
+                MaterialTheme.typography.titleMedium,
+
+            fontWeight =
+                FontWeight.Bold
+        )
+
+        Spacer(
+            modifier =
+                Modifier.height(8.dp)
+        )
+
+        Text(
+            text =
+                message,
+
+            style =
+                MaterialTheme.typography.bodyMedium,
+
+            color =
+                MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        Spacer(
+            modifier =
+                Modifier.height(16.dp)
+        )
+
+        Text(
+            text =
+                "Reintentar",
+
+            color =
+                MaterialTheme.colorScheme.primary,
+
+            fontWeight =
+                FontWeight.SemiBold,
+
+            modifier =
+                Modifier.clickable(
+                    onClick = onRetry
+                )
+        )
     }
 }

@@ -1,13 +1,9 @@
 package pe.com.smart.core.ui
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
@@ -25,7 +21,6 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -45,15 +40,17 @@ fun AppTopBar(
 ) {
 
     CenterAlignedTopAppBar(
-
         colors =
             TopAppBarDefaults.centerAlignedTopAppBarColors(
                 containerColor =
                     MaterialTheme.colorScheme.surface,
+
                 titleContentColor =
                     MaterialTheme.colorScheme.onSurface,
+
                 navigationIconContentColor =
                     MaterialTheme.colorScheme.onSurface,
+
                 actionIconContentColor =
                     MaterialTheme.colorScheme.onSurfaceVariant
             ),
@@ -65,8 +62,7 @@ fun AppTopBar(
                 canNavigateBack -> {
 
                     IconButton(
-                        onClick =
-                            onBackClick
+                        onClick = onBackClick
                     ) {
 
                         Icon(
@@ -74,7 +70,10 @@ fun AppTopBar(
                                 Icons.AutoMirrored.Outlined.ArrowBack,
 
                             contentDescription =
-                                "Volver"
+                                "Volver",
+
+                            modifier =
+                                Modifier.size(24.dp)
                         )
                     }
                 }
@@ -82,8 +81,7 @@ fun AppTopBar(
                 showMenu -> {
 
                     IconButton(
-                        onClick =
-                            onMenuClick
+                        onClick = onMenuClick
                     ) {
 
                         Icon(
@@ -91,7 +89,10 @@ fun AppTopBar(
                                 Icons.Outlined.Menu,
 
                             contentDescription =
-                                "Abrir menú"
+                                "Abrir menú",
+
+                            modifier =
+                                Modifier.size(24.dp)
                         )
                     }
                 }
@@ -106,17 +107,15 @@ fun AppTopBar(
             ) {
 
                 Text(
-                    text =
-                        title,
+                    text = title,
 
                     style =
                         MaterialTheme.typography.titleLarge,
 
                     fontWeight =
-                        FontWeight.Bold,
+                        FontWeight.SemiBold,
 
-                    maxLines =
-                        1,
+                    maxLines = 1,
 
                     overflow =
                         TextOverflow.Ellipsis
@@ -125,17 +124,15 @@ fun AppTopBar(
                 if (!subtitle.isNullOrBlank()) {
 
                     Text(
-                        text =
-                            subtitle,
+                        text = subtitle,
 
                         style =
-                            MaterialTheme.typography.labelMedium,
+                            MaterialTheme.typography.labelSmall,
 
                         color =
                             MaterialTheme.colorScheme.onSurfaceVariant,
 
-                        maxLines =
-                            1,
+                        maxLines = 1,
 
                         overflow =
                             TextOverflow.Ellipsis
@@ -149,11 +146,8 @@ fun AppTopBar(
             if (showProfile) {
 
                 ProfileAvatar(
-                    username =
-                        username,
-
-                    onClick =
-                        onProfileClick
+                    username = username,
+                    onClick = onProfileClick
                 )
 
                 Spacer(
@@ -165,6 +159,7 @@ fun AppTopBar(
     )
 }
 
+
 @Composable
 private fun ProfileAvatar(
     username: String,
@@ -172,16 +167,14 @@ private fun ProfileAvatar(
 ) {
 
     val initials =
-        username
-            .trim()
-            .take(2)
-            .uppercase()
+        getInitials(
+            username
+        )
 
     Surface(
         modifier =
             Modifier
-                .size(38.dp)
-                .clip(CircleShape)
+                .size(40.dp)
                 .clickable(
                     onClick = onClick
                 ),
@@ -190,7 +183,10 @@ private fun ProfileAvatar(
             CircleShape,
 
         color =
-            MaterialTheme.colorScheme.primaryContainer
+            MaterialTheme.colorScheme.primaryContainer,
+
+        contentColor =
+            MaterialTheme.colorScheme.onPrimaryContainer
     ) {
 
         Box(
@@ -199,8 +195,7 @@ private fun ProfileAvatar(
         ) {
 
             Text(
-                text =
-                    initials,
+                text = initials,
 
                 style =
                     MaterialTheme.typography.labelLarge,
@@ -209,8 +204,49 @@ private fun ProfileAvatar(
                     FontWeight.Bold,
 
                 color =
-                    MaterialTheme.colorScheme.onPrimaryContainer
+                    MaterialTheme.colorScheme.primary
             )
         }
+    }
+}
+
+
+private fun getInitials(
+    username: String
+): String {
+
+    val words =
+        username
+            .trim()
+            .split(" ")
+            .filter {
+                it.isNotBlank()
+            }
+
+    if (words.isEmpty()) {
+        return "U"
+    }
+
+    if (words.size == 1) {
+
+        return words
+            .first()
+            .take(2)
+            .uppercase()
+    }
+
+    return buildString {
+
+        append(
+            words.first()
+                .first()
+                .uppercaseChar()
+        )
+
+        append(
+            words.last()
+                .first()
+                .uppercaseChar()
+        )
     }
 }

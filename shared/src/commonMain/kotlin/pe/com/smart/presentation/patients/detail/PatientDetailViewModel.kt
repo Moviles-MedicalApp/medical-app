@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import pe.com.smart.core.ui.message.UiMessageManager
 import pe.com.smart.data.remote.ApiProvider
 import pe.com.smart.domain.repository.PatientRepository
 
@@ -46,21 +47,16 @@ class PatientDetailViewModel(
 
                     _uiState.value =
                         _uiState.value.copy(
-                            patient =
-                                patient,
-                            isLoading =
-                                false,
-                            error =
-                                null
+                            patient = patient,
+                            isLoading = false,
+                            error = null
                         )
                 }
                 .onFailure { exception ->
 
                     _uiState.value =
                         _uiState.value.copy(
-                            isLoading =
-                                false,
-
+                            isLoading = false,
                             error =
                                 exception.message
                                     ?: "No se pudo cargar el paciente."
@@ -93,23 +89,32 @@ class PatientDetailViewModel(
 
                     _uiState.value =
                         _uiState.value.copy(
-                            isDeleting =
-                                false
+                            isDeleting = false
                         )
+
+                    UiMessageManager.success(
+                        title = "Paciente eliminado",
+                        message = "El registro fue eliminado correctamente."
+                    )
 
                     onSuccess()
                 }
                 .onFailure { exception ->
 
+                    val errorMessage =
+                        exception.message
+                            ?: "No se pudo eliminar el paciente."
+
                     _uiState.value =
                         _uiState.value.copy(
-                            isDeleting =
-                                false,
-
-                            error =
-                                exception.message
-                                    ?: "No se pudo eliminar el paciente."
+                            isDeleting = false,
+                            error = errorMessage
                         )
+
+                    UiMessageManager.error(
+                        title = "No se pudo eliminar",
+                        message = errorMessage
+                    )
                 }
         }
     }

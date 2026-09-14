@@ -18,6 +18,7 @@ object UiMessageManager {
         title: String,
         message: String? = null
     ) {
+
         _messages.tryEmit(
             UiMessage.Success(
                 title = title,
@@ -30,6 +31,7 @@ object UiMessageManager {
         title: String,
         message: String? = null
     ) {
+
         _messages.tryEmit(
             UiMessage.Error(
                 title = title,
@@ -42,6 +44,7 @@ object UiMessageManager {
         title: String,
         message: String? = null
     ) {
+
         _messages.tryEmit(
             UiMessage.Info(
                 title = title,
@@ -54,6 +57,7 @@ object UiMessageManager {
         title: String,
         message: String? = null
     ) {
+
         _messages.tryEmit(
             UiMessage.Warning(
                 title = title,

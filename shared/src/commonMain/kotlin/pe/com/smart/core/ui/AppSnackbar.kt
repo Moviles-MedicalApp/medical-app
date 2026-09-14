@@ -1,11 +1,13 @@
 package pe.com.smart.core.ui
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -21,12 +23,13 @@ import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.WarningAmber
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -44,124 +47,84 @@ fun AppSnackbar(
         modifier = modifier,
 
         enter =
-            fadeIn() +
+            fadeIn(
+                animationSpec =
+                    tween(
+                        durationMillis = 220
+                    )
+            ) +
                     slideInVertically(
+                        animationSpec =
+                            tween(
+                                durationMillis = 280
+                            ),
+
                         initialOffsetY = {
-                            it / 2
+                            it
                         }
                     ),
 
         exit =
-            fadeOut() +
+            fadeOut(
+                animationSpec =
+                    tween(
+                        durationMillis = 180
+                    )
+            ) +
                     slideOutVertically(
+                        animationSpec =
+                            tween(
+                                durationMillis = 220
+                            ),
+
                         targetOffsetY = {
-                            it / 2
+                            it
                         }
                     )
     ) {
 
-        /*
-         * Si no existe mensaje, no renderizamos
-         * contenido dentro de la animación.
-         */
         if (message == null) {
             return@AnimatedVisibility
         }
 
-        /*
-         * =================================================
-         * ICONO SEGÚN TIPO DE MENSAJE
-         * =================================================
-         */
-        val icon: ImageVector =
-            when (message) {
+        val icon =
+            getMessageIcon(
+                message
+            )
 
-                is UiMessage.Success ->
-                    Icons.Outlined.CheckCircle
+        val colors =
+            getMessageColors(
+                message
+            )
 
-                is UiMessage.Error ->
-                    Icons.Outlined.ErrorOutline
-
-                is UiMessage.Info ->
-                    Icons.Outlined.Info
-
-                is UiMessage.Warning ->
-                    Icons.Outlined.WarningAmber
-            }
-
-        /*
-         * =================================================
-         * COLOR DE FONDO SEGÚN ACCIÓN
-         * =================================================
-         */
-        val containerColor =
-            when (message) {
-
-                is UiMessage.Success ->
-                    MaterialTheme.colorScheme.primaryContainer
-
-                is UiMessage.Error ->
-                    MaterialTheme.colorScheme.errorContainer
-
-                is UiMessage.Info ->
-                    MaterialTheme.colorScheme.secondaryContainer
-
-                is UiMessage.Warning ->
-                    MaterialTheme.colorScheme.tertiaryContainer
-            }
-
-        /*
-         * =================================================
-         * COLOR DEL CONTENIDO
-         * =================================================
-         */
-        val contentColor =
-            when (message) {
-
-                is UiMessage.Success ->
-                    MaterialTheme.colorScheme.onPrimaryContainer
-
-                is UiMessage.Error ->
-                    MaterialTheme.colorScheme.onErrorContainer
-
-                is UiMessage.Info ->
-                    MaterialTheme.colorScheme.onSecondaryContainer
-
-                is UiMessage.Warning ->
-                    MaterialTheme.colorScheme.onTertiaryContainer
-            }
-
-        /*
-         * =================================================
-         * CONTENEDOR DE LA NOTIFICACIÓN
-         * =================================================
-         */
         Surface(
             modifier =
                 Modifier.fillMaxWidth(),
 
             shape =
-                RoundedCornerShape(18.dp),
+                RoundedCornerShape(
+                    18.dp
+                ),
 
             color =
-                containerColor,
+                colors.container,
 
             contentColor =
-                contentColor,
+                colors.content,
 
             tonalElevation =
-                4.dp,
+                2.dp,
 
             shadowElevation =
-                6.dp,
+                8.dp,
 
             border =
                 BorderStroke(
                     width = 1.dp,
 
                     color =
-                        contentColor.copy(
-                            alpha = 0.12f
+                        colors.content.copy(
+                            alpha = 0.14f
                         )
                 )
         ) {
@@ -170,7 +133,7 @@ fun AppSnackbar(
                 modifier =
                     Modifier.padding(
                         horizontal = 18.dp,
-                        vertical = 14.dp
+                        vertical = 15.dp
                     ),
 
                 verticalAlignment =
@@ -178,81 +141,290 @@ fun AppSnackbar(
             ) {
 
                 /*
+                 * =========================================
                  * ICONO
+                 * =========================================
                  */
-                Icon(
-                    imageVector =
-                        icon,
-
-                    contentDescription =
-                        null,
-
+                Surface(
                     modifier =
-                        Modifier.size(28.dp),
+                        Modifier.size(
+                            40.dp
+                        ),
 
-                    tint =
-                        contentColor
-                )
+                    shape =
+                        RoundedCornerShape(
+                            12.dp
+                        ),
+
+                    color =
+                        colors.content.copy(
+                            alpha = 0.10f
+                        )
+                ) {
+
+                    androidx.compose.foundation.layout.Box(
+                        contentAlignment =
+                            Alignment.Center
+                    ) {
+
+                        Icon(
+                            imageVector =
+                                icon,
+
+                            contentDescription =
+                                null,
+
+                            modifier =
+                                Modifier.size(
+                                    24.dp
+                                ),
+
+                            tint =
+                                colors.content
+                        )
+                    }
+                }
 
                 Spacer(
                     modifier =
-                        Modifier.width(14.dp)
+                        Modifier.width(
+                            14.dp
+                        )
                 )
 
                 /*
+                 * =========================================
                  * TEXTO
+                 * =========================================
                  */
                 Column(
                     modifier =
-                        Modifier.weight(1f),
+                        Modifier.weight(
+                            1f
+                        ),
 
                     verticalArrangement =
                         Arrangement.Center
                 ) {
 
-                    /*
-                     * TÍTULO
-                     */
                     Text(
                         text =
                             message.title,
 
                         style =
-                            MaterialTheme.typography.titleSmall,
+                            MaterialTheme.typography
+                                .titleSmall,
 
                         fontWeight =
                             FontWeight.SemiBold,
 
                         color =
-                            contentColor
+                            colors.content
                     )
 
-                    /*
-                     * MENSAJE OPCIONAL
-                     */
                     if (
-                        !message.message.isNullOrBlank()
+                        !message.message
+                            .isNullOrBlank()
                     ) {
 
                         Text(
                             text =
-                                message.message.orEmpty(),
+                                message.message
+                                    .orEmpty(),
 
                             style =
-                                MaterialTheme.typography.bodySmall,
+                                MaterialTheme.typography
+                                    .bodySmall,
 
                             color =
-                                contentColor.copy(
+                                colors.content.copy(
                                     alpha = 0.82f
                                 ),
 
                             modifier =
                                 Modifier.padding(
-                                    top = 2.dp
+                                    top = 3.dp
                                 )
                         )
                     }
                 }
+            }
+        }
+    }
+}
+
+
+/*
+ * =====================================================
+ * ICONO
+ * =====================================================
+ */
+
+private fun getMessageIcon(
+    message: UiMessage
+): ImageVector {
+
+    return when (message) {
+
+        is UiMessage.Success ->
+            Icons.Outlined.CheckCircle
+
+        is UiMessage.Error ->
+            Icons.Outlined.ErrorOutline
+
+        is UiMessage.Warning ->
+            Icons.Outlined.WarningAmber
+
+        is UiMessage.Info ->
+            Icons.Outlined.Info
+    }
+}
+
+
+/*
+ * =====================================================
+ * COLORES
+ * =====================================================
+ */
+
+private data class MessageColors(
+    val container: Color,
+    val content: Color
+)
+
+
+@Composable
+private fun getMessageColors(
+    message: UiMessage
+): MessageColors {
+
+    val dark =
+        isSystemInDarkTheme()
+
+    return when (message) {
+
+        /*
+         * SUCCESS
+         * Verde
+         */
+        is UiMessage.Success -> {
+
+            if (dark) {
+
+                MessageColors(
+                    container =
+                        Color(
+                            0xFF163820
+                        ),
+
+                    content =
+                        Color(
+                            0xFFA8DAB5
+                        )
+                )
+
+            } else {
+
+                MessageColors(
+                    container =
+                        Color(
+                            0xFFE7F6EC
+                        ),
+
+                    content =
+                        Color(
+                            0xFF146C2E
+                        )
+                )
+            }
+        }
+
+        /*
+         * ERROR
+         * Rojo
+         */
+        is UiMessage.Error -> {
+
+            MessageColors(
+                container =
+                    MaterialTheme.colorScheme
+                        .errorContainer,
+
+                content =
+                    MaterialTheme.colorScheme
+                        .onErrorContainer
+            )
+        }
+
+        /*
+         * WARNING
+         * Ámbar
+         */
+        is UiMessage.Warning -> {
+
+            if (dark) {
+
+                MessageColors(
+                    container =
+                        Color(
+                            0xFF453208
+                        ),
+
+                    content =
+                        Color(
+                            0xFFFFD67A
+                        )
+                )
+
+            } else {
+
+                MessageColors(
+                    container =
+                        Color(
+                            0xFFFFF4E5
+                        ),
+
+                    content =
+                        Color(
+                            0xFF8A4B08
+                        )
+                )
+            }
+        }
+
+        /*
+         * INFO
+         * Azul
+         */
+        is UiMessage.Info -> {
+
+            if (dark) {
+
+                MessageColors(
+                    container =
+                        Color(
+                            0xFF132A46
+                        ),
+
+                    content =
+                        Color(
+                            0xFFAECBFA
+                        )
+                )
+
+            } else {
+
+                MessageColors(
+                    container =
+                        Color(
+                            0xFFE8F1FF
+                        ),
+
+                    content =
+                        Color(
+                            0xFF0B57D0
+                        )
+                )
             }
         }
     }

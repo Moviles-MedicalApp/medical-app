@@ -47,6 +47,8 @@ import pe.com.smart.presentation.schedules.MedicalSchedulesScreen
 import pe.com.smart.presentation.specialities.SpecialitiesScreen
 import pe.com.smart.presentation.splash.SplashScreen
 
+import kotlinx.coroutines.flow.collectLatest
+
 @Composable
 fun AppNavigation() {
 
@@ -173,25 +175,30 @@ fun AppNavigation() {
 
         UiMessageManager
             .messages
-            .collect { message ->
+            .collectLatest { message ->
 
                 /*
-                 * Ocultamos cualquier mensaje anterior
-                 * antes de mostrar el nuevo.
+                 * Cerramos la notificación anterior.
                  */
                 showUiMessage =
                     false
 
-                delay(150)
+                delay(120)
 
+                /*
+                 * Establecemos la nueva.
+                 */
                 currentUiMessage =
                     message
 
+                /*
+                 * Entrada animada.
+                 */
                 showUiMessage =
                     true
 
                 /*
-                 * Duración según el tipo.
+                 * Duración.
                  */
                 val duration =
                     when (message) {
@@ -209,15 +216,19 @@ fun AppNavigation() {
                             3000L
                     }
 
-                delay(duration)
+                delay(
+                    duration
+                )
 
                 /*
-                 * Animación de salida.
+                 * Salida animada.
                  */
                 showUiMessage =
                     false
 
-                delay(300)
+                delay(
+                    250
+                )
 
                 currentUiMessage =
                     null
@@ -931,35 +942,40 @@ private fun AppNavHost(
         }
 
         /*
-         * =================================================
-         * NUEVO PACIENTE
-         * =================================================
-         */
+ * =================================================
+ * NUEVO PACIENTE
+ * =================================================
+ */
 
         composable(
             route =
                 Routes.PATIENT_CREATE,
 
             enterTransition = {
-
                 slideInFromRight()
             },
 
             exitTransition = {
-
                 noExitTransition()
             },
 
             popEnterTransition = {
-
                 noEnterTransition()
             },
 
             popExitTransition = {
-
                 slideOutToRight()
             }
         ) {
+
+            /*
+             * Cada incremento representa
+             * una solicitud de volver.
+             */
+            var backRequestKey by
+            remember {
+                mutableIntStateOf(0)
+            }
 
             AppScreenScaffold(
                 title =
@@ -973,7 +989,13 @@ private fun AppNavHost(
 
                 onBackClick = {
 
-                    navController.popBackStack()
+                    /*
+                     * No navegamos directamente.
+                     *
+                     * El formulario decidirá si
+                     * necesita confirmación.
+                     */
+                    backRequestKey++
                 }
             ) { innerPadding ->
 
@@ -981,23 +1003,19 @@ private fun AppNavHost(
                     patientId =
                         null,
 
+                    backRequestKey =
+                        backRequestKey,
+
+                    onBackConfirmed = {
+
+                        navController.popBackStack()
+                    },
+
                     onSaved = {
 
                         onPatientsChanged()
 
-                        /*
-                         * Notificación personalizada.
-                         */
-                        UiMessageManager.success(
-                            title =
-                                "Paciente registrado",
-
-                            message =
-                                "El paciente fue guardado correctamente."
-                        )
-
-                        navController
-                            .popBackStack()
+                        navController.popBackStack()
                     },
 
                     modifier =
@@ -1098,20 +1116,9 @@ private fun AppNavHost(
 
                         onPatientsChanged()
 
-                        UiMessageManager.success(
-                            title =
-                                "Paciente eliminado",
-
-                            message =
-                                "El registro fue eliminado correctamente."
-                        )
-
                         navController.popBackStack(
-                            route =
-                                Routes.PATIENTS,
-
-                            inclusive =
-                                false
+                            route = Routes.PATIENTS,
+                            inclusive = false
                         )
                     },
 
@@ -1124,10 +1131,10 @@ private fun AppNavHost(
         }
 
         /*
-         * =================================================
-         * EDITAR PACIENTE
-         * =================================================
-         */
+ * =================================================
+ * EDITAR PACIENTE
+ * =================================================
+ */
 
         composable(
             route =
@@ -1146,22 +1153,18 @@ private fun AppNavHost(
                 ),
 
             enterTransition = {
-
                 slideInFromRight()
             },
 
             exitTransition = {
-
                 noExitTransition()
             },
 
             popEnterTransition = {
-
                 noEnterTransition()
             },
 
             popExitTransition = {
-
                 slideOutToRight()
             }
         ) { backStackEntry ->
@@ -1177,6 +1180,11 @@ private fun AppNavHost(
                     }
                     ?: return@composable
 
+            var backRequestKey by
+            remember {
+                mutableIntStateOf(0)
+            }
+
             AppScreenScaffold(
                 title =
                     "Editar paciente",
@@ -1189,7 +1197,7 @@ private fun AppNavHost(
 
                 onBackClick = {
 
-                    navController.popBackStack()
+                    backRequestKey++
                 }
             ) { innerPadding ->
 
@@ -1197,22 +1205,30 @@ private fun AppNavHost(
                     patientId =
                         patientId,
 
+                    backRequestKey =
+                        backRequestKey,
+
+                    onBackConfirmed = {
+
+                        navController.popBackStack()
+                    },
+
                     onSaved = {
 
+                        /*
+                         * Refrescamos listado.
+                         */
                         onPatientsChanged()
 
+                        /*
+                         * Refrescamos detalle.
+                         */
                         onPatientDetailChanged()
 
-                        UiMessageManager.success(
-                            title =
-                                "Paciente actualizado",
-
-                            message =
-                                "Los cambios se guardaron correctamente."
-                        )
-
-                        navController
-                            .popBackStack()
+                        /*
+                         * Volvemos al detalle.
+                         */
+                        navController.popBackStack()
                     },
 
                     modifier =
