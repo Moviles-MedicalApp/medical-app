@@ -1,4 +1,4 @@
-package pe.com.smart.ui.theme
+package pe.com.smart.core.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle

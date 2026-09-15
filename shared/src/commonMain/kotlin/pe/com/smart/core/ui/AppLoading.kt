@@ -1,4 +1,4 @@
-package pe.com.smart.presentation.splash
+package pe.com.smart.core.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -6,41 +6,31 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.delay
 
 @Composable
-fun SplashScreen(
-    onFinished: () -> Unit
+fun AppLoading(
+    message: String = "Cargando..."
 ) {
-    LaunchedEffect(Unit) {
-        delay(1500)
-        onFinished()
-    }
 
     Column(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(
-            text = "Medical App",
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.primary
-        )
+
+        CircularProgressIndicator()
 
         Spacer(
-            modifier = Modifier.height(24.dp)
+            modifier = Modifier.height(16.dp)
         )
 
-        CircularProgressIndicator(
-            color = MaterialTheme.colorScheme.primary
+        Text(
+            text = message
         )
     }
 }
