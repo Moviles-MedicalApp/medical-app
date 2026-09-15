@@ -2,7 +2,7 @@ package pe.com.smart
 
 import androidx.compose.runtime.Composable
 import pe.com.smart.presentation.navigation.AppNavigation
-import pe.com.smart.ui.theme.SmartTheme
+import pe.com.smart.core.ui.theme.SmartTheme
 
 @Composable
 fun App() {
