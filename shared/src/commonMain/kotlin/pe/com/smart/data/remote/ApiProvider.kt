@@ -2,8 +2,11 @@ package pe.com.smart.data.remote
 
 import pe.com.smart.data.remote.auth.AuthApiService
 import pe.com.smart.data.remote.patient.PatientApiService
+import pe.com.smart.data.remote.speciality.SpecialityApiService
 import pe.com.smart.data.repository.PatientRepositoryImpl
+import pe.com.smart.data.repository.SpecialityRepositoryImpl
 import pe.com.smart.domain.repository.PatientRepository
+import pe.com.smart.domain.repository.SpecialityRepository
 
 object ApiProvider {
 
@@ -19,5 +22,13 @@ object ApiProvider {
     val patientRepository: PatientRepository =
         PatientRepositoryImpl(
             patientApiService
+        )
+
+    private val specialityApiService =
+        SpecialityApiService(httpClient)
+
+    val specialityRepository: SpecialityRepository =
+        SpecialityRepositoryImpl(
+            specialityApiService
         )
 }

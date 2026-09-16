@@ -7,6 +7,7 @@ import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
+import pe.com.smart.core.network.ApiConstants
 import pe.com.smart.data.remote.auth.dto.LoginRequest
 import pe.com.smart.data.remote.auth.dto.LoginResponse
 
@@ -19,7 +20,7 @@ class AuthApiService(
     ): LoginResponse {
 
         val response = client.post(
-            "http://10.0.2.2:4040/auth-server/auth/login"
+            "${ApiConstants.AUTH_SERVER}/auth/login"
         ) {
             contentType(ContentType.Application.Json)
             setBody(request)
