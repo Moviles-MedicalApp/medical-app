@@ -17,6 +17,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowForward
 import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.VerifiedUser
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -37,45 +38,65 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import pe.com.smart.core.ui.theme.SuccessGreen
 import pe.com.smart.presentation.login.components.LoginHeader
 import pe.com.smart.presentation.login.components.LoginTextField
 import pe.com.smart.presentation.login.components.PasswordTextField
-import pe.com.smart.ui.theme.SuccessGreen
 
 @Composable
 fun LoginScreen(
     onLoginSuccess: () -> Unit,
+    message: String? = null,
     onConsultAppointments: () -> Unit = {},
+    modifier: Modifier = Modifier,
     viewModel: LoginViewModel = viewModel()
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+
+    val uiState by
+    viewModel.uiState.collectAsState()
 
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+            .background(
+                MaterialTheme.colorScheme.background
+            )
             .padding(
                 horizontal = 24.dp,
                 vertical = 24.dp
             )
     ) {
+
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .widthIn(max = 440.dp)
                 .align(Alignment.Center),
-            horizontalAlignment = Alignment.CenterHorizontally
+
+            horizontalAlignment =
+                Alignment.CenterHorizontally
         ) {
+
             Text(
-                text = "SISTEMA DE AUTENTICACIÓN",
-                style = MaterialTheme.typography.labelSmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary,
-                textAlign = TextAlign.Center
+                text =
+                    "SISTEMA DE AUTENTICACIÓN",
+
+                style =
+                    MaterialTheme.typography.labelSmall,
+
+                fontWeight =
+                    FontWeight.Bold,
+
+                color =
+                    MaterialTheme.colorScheme.primary,
+
+                textAlign =
+                    TextAlign.Center
             )
 
             Spacer(
-                modifier = Modifier.height(12.dp)
+                modifier =
+                    Modifier.height(12.dp)
             )
 
             Box(
@@ -85,31 +106,51 @@ fun LoginScreen(
                         max = 36.dp
                     )
                     .height(1.dp)
-                    .background(MaterialTheme.colorScheme.outlineVariant)
+                    .background(
+                        MaterialTheme.colorScheme
+                            .outlineVariant
+                    )
             )
 
             Spacer(
-                modifier = Modifier.height(28.dp)
+                modifier =
+                    Modifier.height(28.dp)
             )
 
             Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(14.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                ),
-                elevation = CardDefaults.cardElevation(
-                    defaultElevation = 3.dp
-                )
+                modifier =
+                    Modifier.fillMaxWidth(),
+
+                shape =
+                    RoundedCornerShape(14.dp),
+
+                colors =
+                    CardDefaults.cardColors(
+                        containerColor =
+                            MaterialTheme.colorScheme.surface
+                    ),
+
+                elevation =
+                    CardDefaults.cardElevation(
+                        defaultElevation = 3.dp
+                    )
             ) {
+
                 Column(
-                    modifier = Modifier.fillMaxWidth()
+                    modifier =
+                        Modifier.fillMaxWidth()
                 ) {
+
+                    /*
+                     * Línea superior decorativa
+                     */
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(3.dp)
-                            .background(MaterialTheme.colorScheme.primary)
+                            .background(
+                                MaterialTheme.colorScheme.primary
+                            )
                     )
 
                     Column(
@@ -119,172 +160,417 @@ fun LoginScreen(
                                 horizontal = 28.dp,
                                 vertical = 28.dp
                             ),
-                        horizontalAlignment = Alignment.CenterHorizontally
+
+                        horizontalAlignment =
+                            Alignment.CenterHorizontally
                     ) {
+
                         LoginHeader()
 
                         Spacer(
-                            modifier = Modifier.height(28.dp)
+                            modifier =
+                                Modifier.height(24.dp)
                         )
 
+                        /*
+                         * ===================================
+                         * MENSAJE DE SESIÓN EXPIRADA
+                         * ===================================
+                         */
+                        if (!message.isNullOrBlank()) {
+
+                            Card(
+                                modifier =
+                                    Modifier.fillMaxWidth(),
+
+                                shape =
+                                    RoundedCornerShape(10.dp),
+
+                                colors =
+                                    CardDefaults.cardColors(
+                                        containerColor =
+                                            MaterialTheme.colorScheme
+                                                .errorContainer
+                                    )
+                            ) {
+
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(
+                                            horizontal = 14.dp,
+                                            vertical = 12.dp
+                                        ),
+
+                                    verticalAlignment =
+                                        Alignment.CenterVertically,
+
+                                    horizontalArrangement =
+                                        Arrangement.spacedBy(10.dp)
+                                ) {
+
+                                    Icon(
+                                        imageVector =
+                                            Icons.Outlined.ErrorOutline,
+
+                                        contentDescription =
+                                            null,
+
+                                        tint =
+                                            MaterialTheme.colorScheme
+                                                .onErrorContainer,
+
+                                        modifier =
+                                            Modifier.size(20.dp)
+                                    )
+
+                                    Text(
+                                        text =
+                                            message,
+
+                                        style =
+                                            MaterialTheme.typography
+                                                .bodyMedium,
+
+                                        color =
+                                            MaterialTheme.colorScheme
+                                                .onErrorContainer,
+
+                                        modifier =
+                                            Modifier.weight(1f)
+                                    )
+                                }
+                            }
+
+                            Spacer(
+                                modifier =
+                                    Modifier.height(18.dp)
+                            )
+                        }
+
+                        /*
+                         * ===================================
+                         * USUARIO
+                         * ===================================
+                         */
                         LoginTextField(
-                            value = uiState.username,
-                            onValueChange = viewModel::onUsernameChange,
-                            label = "Nombre de usuario",
-                            placeholder = "Ingresa tu usuario",
-                            errorMessage = uiState.usernameError
+                            value =
+                                uiState.username,
+
+                            onValueChange =
+                                viewModel::onUsernameChange,
+
+                            label =
+                                "Nombre de usuario",
+
+                            placeholder =
+                                "Ingresa tu usuario",
+
+                            errorMessage =
+                                uiState.usernameError
                         )
 
                         Spacer(
-                            modifier = Modifier.height(14.dp)
+                            modifier =
+                                Modifier.height(14.dp)
                         )
 
+                        /*
+                         * ===================================
+                         * CONTRASEÑA
+                         * ===================================
+                         */
                         PasswordTextField(
-                            value = uiState.password,
-                            onValueChange = viewModel::onPasswordChange,
-                            isPasswordVisible = uiState.isPasswordVisible,
+                            value =
+                                uiState.password,
+
+                            onValueChange =
+                                viewModel::onPasswordChange,
+
+                            isPasswordVisible =
+                                uiState.isPasswordVisible,
+
                             onPasswordVisibilityChange =
                                 viewModel::togglePasswordVisibility,
-                            errorMessage = uiState.passwordError
+
+                            errorMessage =
+                                uiState.passwordError
                         )
 
+                        /*
+                         * ===================================
+                         * ERROR NORMAL DEL LOGIN
+                         * ===================================
+                         *
+                         * Por ejemplo:
+                         * usuario o contraseña incorrectos.
+                         *
+                         * Este error es distinto del mensaje
+                         * global de sesión expirada.
+                         */
                         uiState.loginError?.let { error ->
+
                             Spacer(
-                                modifier = Modifier.height(10.dp)
+                                modifier =
+                                    Modifier.height(10.dp)
                             )
 
                             Text(
-                                text = error,
-                                modifier = Modifier.fillMaxWidth(),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.error,
-                                textAlign = TextAlign.Center
+                                text =
+                                    error,
+
+                                modifier =
+                                    Modifier.fillMaxWidth(),
+
+                                style =
+                                    MaterialTheme.typography
+                                        .bodySmall,
+
+                                color =
+                                    MaterialTheme.colorScheme.error,
+
+                                textAlign =
+                                    TextAlign.Center
                             )
                         }
 
                         Spacer(
-                            modifier = Modifier.height(18.dp)
+                            modifier =
+                                Modifier.height(18.dp)
                         )
 
+                        /*
+                         * ===================================
+                         * BOTÓN ENTRAR
+                         * ===================================
+                         */
                         Button(
                             onClick = {
+
                                 viewModel.login(
-                                    onSuccess = onLoginSuccess
+                                    onSuccess =
+                                        onLoginSuccess
                                 )
                             },
+
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(48.dp),
-                            enabled = uiState.isLoginEnabled,
-                            shape = RoundedCornerShape(10.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.primary,
-                                contentColor = MaterialTheme.colorScheme.onPrimary,
-                                disabledContainerColor =
-                                    MaterialTheme.colorScheme.surfaceVariant,
-                                disabledContentColor =
-                                    MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        ) {
-                            if (uiState.isLoading) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(20.dp),
-                                    strokeWidth = 2.dp,
-                                    color = MaterialTheme.colorScheme.onPrimary
+
+                            enabled =
+                                uiState.isLoginEnabled,
+
+                            shape =
+                                RoundedCornerShape(10.dp),
+
+                            colors =
+                                ButtonDefaults.buttonColors(
+                                    containerColor =
+                                        MaterialTheme.colorScheme.primary,
+
+                                    contentColor =
+                                        MaterialTheme.colorScheme.onPrimary,
+
+                                    disabledContainerColor =
+                                        MaterialTheme.colorScheme
+                                            .surfaceVariant,
+
+                                    disabledContentColor =
+                                        MaterialTheme.colorScheme
+                                            .onSurfaceVariant
                                 )
+                        ) {
+
+                            if (uiState.isLoading) {
+
+                                CircularProgressIndicator(
+                                    modifier =
+                                        Modifier.size(20.dp),
+
+                                    strokeWidth =
+                                        2.dp,
+
+                                    color =
+                                        MaterialTheme.colorScheme
+                                            .onPrimary
+                                )
+
                             } else {
+
                                 Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    verticalAlignment =
+                                        Alignment.CenterVertically,
+
+                                    horizontalArrangement =
+                                        Arrangement.spacedBy(8.dp)
                                 ) {
+
                                     Text(
-                                        text = "ENTRAR",
-                                        style = MaterialTheme.typography.labelLarge,
-                                        fontWeight = FontWeight.Bold
+                                        text =
+                                            "ENTRAR",
+
+                                        style =
+                                            MaterialTheme.typography
+                                                .labelLarge,
+
+                                        fontWeight =
+                                            FontWeight.Bold
                                     )
 
                                     Icon(
-                                        imageVector = Icons.Outlined.ArrowForward,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(18.dp)
+                                        imageVector =
+                                            Icons.Outlined.ArrowForward,
+
+                                        contentDescription =
+                                            null,
+
+                                        modifier =
+                                            Modifier.size(18.dp)
                                     )
                                 }
                             }
                         }
 
                         Spacer(
-                            modifier = Modifier.height(20.dp)
+                            modifier =
+                                Modifier.height(20.dp)
                         )
 
                         HorizontalDivider(
-                            color = MaterialTheme.colorScheme.outlineVariant
+                            color =
+                                MaterialTheme.colorScheme
+                                    .outlineVariant
                         )
 
                         Spacer(
-                            modifier = Modifier.height(16.dp)
+                            modifier =
+                                Modifier.height(16.dp)
                         )
 
+                        /*
+                         * ===================================
+                         * ESTADO DE SEGURIDAD
+                         * ===================================
+                         */
                         Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            verticalAlignment =
+                                Alignment.CenterVertically,
+
+                            horizontalArrangement =
+                                Arrangement.spacedBy(8.dp)
                         ) {
+
                             Icon(
-                                imageVector = Icons.Outlined.VerifiedUser,
-                                contentDescription = null,
-                                tint = SuccessGreen,
-                                modifier = Modifier.size(18.dp)
+                                imageVector =
+                                    Icons.Outlined.VerifiedUser,
+
+                                contentDescription =
+                                    null,
+
+                                tint =
+                                    SuccessGreen,
+
+                                modifier =
+                                    Modifier.size(18.dp)
                             )
 
                             Text(
-                                text = "CONEXIÓN CIFRADA TLS",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                text =
+                                    "CONEXIÓN CIFRADA TLS",
+
+                                style =
+                                    MaterialTheme.typography
+                                        .labelSmall,
+
+                                color =
+                                    MaterialTheme.colorScheme
+                                        .onSurfaceVariant
                             )
                         }
 
                         Spacer(
-                            modifier = Modifier.height(16.dp)
+                            modifier =
+                                Modifier.height(16.dp)
                         )
 
                         HorizontalDivider(
-                            color = MaterialTheme.colorScheme.outlineVariant
+                            color =
+                                MaterialTheme.colorScheme
+                                    .outlineVariant
                         )
 
                         Spacer(
-                            modifier = Modifier.height(8.dp)
+                            modifier =
+                                Modifier.height(8.dp)
                         )
 
+                        /*
+                         * ===================================
+                         * CONSULTA DE CITAS SIN LOGIN
+                         * ===================================
+                         */
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clip(RoundedCornerShape(8.dp))
+                                .clip(
+                                    RoundedCornerShape(8.dp)
+                                )
                                 .clickable(
-                                    onClick = onConsultAppointments
+                                    enabled =
+                                        !uiState.isLoading,
+
+                                    onClick =
+                                        onConsultAppointments
                                 )
                                 .padding(
                                     vertical = 14.dp,
                                     horizontal = 8.dp
                                 ),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center
+
+                            verticalAlignment =
+                                Alignment.CenterVertically,
+
+                            horizontalArrangement =
+                                Arrangement.Center
                         ) {
+
                             Icon(
-                                imageVector = Icons.Outlined.CalendarMonth,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(18.dp)
+                                imageVector =
+                                    Icons.Outlined.CalendarMonth,
+
+                                contentDescription =
+                                    null,
+
+                                tint =
+                                    MaterialTheme.colorScheme
+                                        .onSurfaceVariant,
+
+                                modifier =
+                                    Modifier.size(18.dp)
                             )
 
                             Spacer(
-                                modifier = Modifier.size(8.dp)
+                                modifier =
+                                    Modifier.size(8.dp)
                             )
 
                             Text(
-                                text = "CONSULTAR CITAS SIN INICIAR SESIÓN",
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                textAlign = TextAlign.Center
+                                text =
+                                    "CONSULTAR CITAS SIN INICIAR SESIÓN",
+
+                                style =
+                                    MaterialTheme.typography
+                                        .labelLarge,
+
+                                fontWeight =
+                                    FontWeight.SemiBold,
+
+                                color =
+                                    MaterialTheme.colorScheme
+                                        .onSurfaceVariant,
+
+                                textAlign =
+                                    TextAlign.Center
                             )
                         }
                     }
@@ -292,14 +578,23 @@ fun LoginScreen(
             }
 
             Spacer(
-                modifier = Modifier.height(28.dp)
+                modifier =
+                    Modifier.height(28.dp)
             )
 
             Text(
-                text = "MEDICAL APP © 2026",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
+                text =
+                    "MEDICAL APP © 2026",
+
+                style =
+                    MaterialTheme.typography.labelSmall,
+
+                color =
+                    MaterialTheme.colorScheme
+                        .onSurfaceVariant,
+
+                textAlign =
+                    TextAlign.Center
             )
         }
     }
