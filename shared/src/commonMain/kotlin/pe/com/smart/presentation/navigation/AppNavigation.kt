@@ -45,6 +45,8 @@ import pe.com.smart.presentation.patients.detail.PatientDetailScreen
 import pe.com.smart.presentation.patients.form.PatientFormScreen
 import pe.com.smart.presentation.schedules.MedicalSchedulesScreen
 import pe.com.smart.presentation.specialities.SpecialitiesScreen
+import pe.com.smart.presentation.specialities.detail.SpecialityDetailScreen
+import pe.com.smart.presentation.specialities.form.SpecialityFormScreen
 import pe.com.smart.presentation.splash.SplashScreen
 
 import kotlinx.coroutines.flow.collectLatest
@@ -113,6 +115,22 @@ fun AppNavigation() {
 
     /*
      * ==================================================
+     * REFRESCO DE ESPECIALIDADES
+     * ==================================================
+     */
+
+    var specialitiesRefreshKey by
+    remember {
+        mutableIntStateOf(0)
+    }
+
+    var specialityDetailRefreshKey by
+    remember {
+        mutableIntStateOf(0)
+    }
+
+    /*
+     * ==================================================
      * RUTA ACTUAL
      * ==================================================
      */
@@ -153,6 +171,9 @@ fun AppNavigation() {
             Routes.PATIENT_EDIT,
             Routes.DOCTORS,
             Routes.SPECIALITIES,
+            Routes.SPECIALITY_CREATE,
+            Routes.SPECIALITY_DETAIL,
+            Routes.SPECIALITY_EDIT,
             Routes.MEDICAL_SCHEDULES
         )
 
@@ -347,6 +368,12 @@ fun AppNavigation() {
                 patientDetailRefreshKey =
                     patientDetailRefreshKey,
 
+                specialitiesRefreshKey =
+                    specialitiesRefreshKey,
+
+                specialityDetailRefreshKey =
+                    specialityDetailRefreshKey,
+
                 onPatientsChanged = {
 
                     patientsRefreshKey++
@@ -355,6 +382,16 @@ fun AppNavigation() {
                 onPatientDetailChanged = {
 
                     patientDetailRefreshKey++
+                },
+
+                onSpecialitiesChanged = {
+
+                    specialitiesRefreshKey++
+                },
+
+                onSpecialityDetailChanged = {
+
+                    specialityDetailRefreshKey++
                 },
 
                 onOpenDrawer = {}
@@ -475,6 +512,12 @@ fun AppNavigation() {
                     patientDetailRefreshKey =
                         patientDetailRefreshKey,
 
+                    specialitiesRefreshKey =
+                        specialitiesRefreshKey,
+
+                    specialityDetailRefreshKey =
+                        specialityDetailRefreshKey,
+
                     onPatientsChanged = {
 
                         patientsRefreshKey++
@@ -483,6 +526,16 @@ fun AppNavigation() {
                     onPatientDetailChanged = {
 
                         patientDetailRefreshKey++
+                    },
+
+                    onSpecialitiesChanged = {
+
+                        specialitiesRefreshKey++
+                    },
+
+                    onSpecialityDetailChanged = {
+
+                        specialityDetailRefreshKey++
                     },
 
                     onOpenDrawer = {
@@ -573,8 +626,12 @@ private fun AppNavHost(
     navController: NavHostController,
     patientsRefreshKey: Int,
     patientDetailRefreshKey: Int,
+    specialitiesRefreshKey: Int,
+    specialityDetailRefreshKey: Int,
     onPatientsChanged: () -> Unit,
     onPatientDetailChanged: () -> Unit,
+    onSpecialitiesChanged: () -> Unit,
+    onSpecialityDetailChanged: () -> Unit,
     onOpenDrawer: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -1299,6 +1356,304 @@ private fun AppNavHost(
             ) { innerPadding ->
 
                 SpecialitiesScreen(
+                    refreshKey =
+                        specialitiesRefreshKey,
+
+                    onSpecialityClick = { specialityId ->
+
+                        navController.navigate(
+                            Routes.specialityDetail(
+                                specialityId
+                            )
+                        )
+                    },
+
+                    onCreateSpecialityClick = {
+
+                        navController.navigate(
+                            Routes.SPECIALITY_CREATE
+                        )
+                    },
+
+                    modifier =
+                        Modifier.padding(
+                            innerPadding
+                        )
+                )
+            }
+        }
+
+        /*
+         * =================================================
+         * NUEVA ESPECIALIDAD
+         * =================================================
+         */
+
+        composable(
+            route =
+                Routes.SPECIALITY_CREATE,
+
+            enterTransition = {
+                slideInFromRight()
+            },
+
+            exitTransition = {
+                noExitTransition()
+            },
+
+            popEnterTransition = {
+                noEnterTransition()
+            },
+
+            popExitTransition = {
+                slideOutToRight()
+            }
+        ) {
+
+            var backRequestKey by
+            remember {
+                mutableIntStateOf(0)
+            }
+
+            AppScreenScaffold(
+                title =
+                    "Nueva especialidad",
+
+                currentRoute =
+                    Routes.SPECIALITY_CREATE,
+
+                showBack =
+                    true,
+
+                onBackClick = {
+
+                    backRequestKey++
+                }
+            ) { innerPadding ->
+
+                SpecialityFormScreen(
+                    specialityId =
+                        null,
+
+                    backRequestKey =
+                        backRequestKey,
+
+                    onBackConfirmed = {
+
+                        navController.popBackStack()
+                    },
+
+                    onSaved = {
+
+                        onSpecialitiesChanged()
+
+                        navController.popBackStack()
+                    },
+
+                    modifier =
+                        Modifier.padding(
+                            innerPadding
+                        )
+                )
+            }
+        }
+
+        /*
+         * =================================================
+         * DETALLE DE LA ESPECIALIDAD
+         * =================================================
+         */
+
+        composable(
+            route =
+                Routes.SPECIALITY_DETAIL,
+
+            arguments =
+                listOf(
+
+                    navArgument(
+                        "specialityId"
+                    ) {
+
+                        type =
+                            NavType.IntType
+                    }
+                ),
+
+            enterTransition = {
+
+                slideInFromRight()
+            },
+
+            exitTransition = {
+
+                noExitTransition()
+            },
+
+            popEnterTransition = {
+
+                noEnterTransition()
+            },
+
+            popExitTransition = {
+
+                slideOutToRight()
+            }
+        ) { backStackEntry ->
+
+            val specialityId =
+                backStackEntry
+                    .arguments
+                    ?.read {
+
+                        getIntOrNull(
+                            "specialityId"
+                        )
+                    }
+                    ?: return@composable
+
+            AppScreenScaffold(
+                title =
+                    "Detalle de especialidad",
+
+                currentRoute =
+                    Routes.SPECIALITY_DETAIL,
+
+                showBack =
+                    true,
+
+                onBackClick = {
+
+                    navController.popBackStack()
+                }
+            ) { innerPadding ->
+
+                SpecialityDetailScreen(
+                    specialityId =
+                        specialityId,
+
+                    refreshKey =
+                        specialityDetailRefreshKey,
+
+                    onEditClick = { id ->
+
+                        navController.navigate(
+                            Routes.specialityEdit(
+                                id
+                            )
+                        )
+                    },
+
+                    onDeleted = {
+
+                        onSpecialitiesChanged()
+
+                        navController.popBackStack(
+                            route = Routes.SPECIALITIES,
+                            inclusive = false
+                        )
+                    },
+
+                    modifier =
+                        Modifier.padding(
+                            innerPadding
+                        )
+                )
+            }
+        }
+
+        /*
+         * =================================================
+         * EDITAR ESPECIALIDAD
+         * =================================================
+         */
+
+        composable(
+            route =
+                Routes.SPECIALITY_EDIT,
+
+            arguments =
+                listOf(
+
+                    navArgument(
+                        "specialityId"
+                    ) {
+
+                        type =
+                            NavType.IntType
+                    }
+                ),
+
+            enterTransition = {
+                slideInFromRight()
+            },
+
+            exitTransition = {
+                noExitTransition()
+            },
+
+            popEnterTransition = {
+                noEnterTransition()
+            },
+
+            popExitTransition = {
+                slideOutToRight()
+            }
+        ) { backStackEntry ->
+
+            val specialityId =
+                backStackEntry
+                    .arguments
+                    ?.read {
+
+                        getIntOrNull(
+                            "specialityId"
+                        )
+                    }
+                    ?: return@composable
+
+            var backRequestKey by
+            remember {
+                mutableIntStateOf(0)
+            }
+
+            AppScreenScaffold(
+                title =
+                    "Editar especialidad",
+
+                currentRoute =
+                    Routes.SPECIALITY_EDIT,
+
+                showBack =
+                    true,
+
+                onBackClick = {
+
+                    backRequestKey++
+                }
+            ) { innerPadding ->
+
+                SpecialityFormScreen(
+                    specialityId =
+                        specialityId,
+
+                    backRequestKey =
+                        backRequestKey,
+
+                    onBackConfirmed = {
+
+                        navController.popBackStack()
+                    },
+
+                    onSaved = {
+
+                        onSpecialitiesChanged()
+
+                        onSpecialityDetailChanged()
+
+                        navController.popBackStack()
+                    },
+
                     modifier =
                         Modifier.padding(
                             innerPadding
