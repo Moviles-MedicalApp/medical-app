@@ -13,14 +13,14 @@ interface SpecialityRepository {
     suspend fun createSpeciality(
         name: String,
         description: String,
-        active: Boolean = true
+        deleted: Boolean = false
     ): Result<Unit>
 
     suspend fun updateSpeciality(
         id: Int,
         name: String,
         description: String,
-        active: Boolean
+        deleted: Boolean
     ): Result<Unit>
 
     suspend fun deleteSpeciality(

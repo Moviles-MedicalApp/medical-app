@@ -18,10 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
-import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material.icons.outlined.MedicalServices
-import androidx.compose.material.icons.outlined.Person
-import androidx.compose.material.icons.outlined.Phone
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -46,7 +43,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import pe.com.smart.core.ui.AppConfirmDialog
 import pe.com.smart.core.ui.AppError
 import pe.com.smart.core.ui.AppLoading
-import pe.com.smart.domain.model.Doctor
 import pe.com.smart.domain.model.Speciality
 
 @Composable
@@ -99,7 +95,6 @@ fun SpecialityDetailScreen(
             uiState.speciality != null -> {
                 SpecialityDetailContent(
                     speciality = uiState.speciality!!,
-                    doctors = uiState.doctors,
                     isDeleting = uiState.isDeleting,
                     error = uiState.error,
                     onEditClick = {
@@ -140,7 +135,6 @@ fun SpecialityDetailScreen(
 @Composable
 private fun SpecialityDetailContent(
     speciality: Speciality,
-    doctors: List<Doctor>,
     isDeleting: Boolean,
     error: String?,
     onEditClick: () -> Unit,
@@ -215,13 +209,13 @@ private fun SpecialityDetailContent(
                                 imageVector = Icons.Outlined.CheckCircle,
                                 contentDescription = null,
                                 modifier = Modifier.size(16.dp),
-                                tint = if (speciality.active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+                                tint = if (!speciality.deleted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
                             )
                             Text(
-                                text = if (speciality.active) "Estado: Activa" else "Estado: Inactiva",
+                                text = if (!speciality.deleted) "Estado: Activa" else "Estado: Inactiva",
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.Medium,
-                                color = if (speciality.active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+                                color = if (!speciality.deleted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
                             )
                         }
                     }
@@ -244,39 +238,6 @@ private fun SpecialityDetailContent(
             }
         }
 
-        /*
-         * =================================================
-         * 2. MÉDICOS ASIGNADOS
-         * =================================================
-         */
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(
-                text = "Médicos asignados (${doctors.size})",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-
-            if (doctors.isEmpty()) {
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                ) {
-                    Text(
-                        text = "No hay médicos asignados a esta especialidad.",
-                        modifier = Modifier.padding(16.dp),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            } else {
-                doctors.forEach { doctor ->
-                    DoctorItemCard(doctor = doctor)
-                }
-            }
-        }
-
         if (!error.isNullOrBlank()) {
             Text(
                 text = error,
@@ -287,7 +248,7 @@ private fun SpecialityDetailContent(
 
         /*
          * =================================================
-         * 3. ACCIONES
+         * 2. ACCIONES
          * =================================================
          */
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -333,112 +294,6 @@ private fun SpecialityDetailContent(
                     text = if (isDeleting) "Eliminando..." else "Eliminar especialidad",
                     fontWeight = FontWeight.SemiBold
                 )
-            }
-        }
-    }
-}
-
-@Composable
-private fun DoctorItemCard(
-    doctor: Doctor,
-    modifier: Modifier = Modifier
-) {
-
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-    ) {
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(14.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-
-            Surface(
-                modifier = Modifier.size(44.dp),
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.secondaryContainer
-            ) {
-
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = Icons.Outlined.Person,
-                        contentDescription = null,
-                        modifier = Modifier.size(22.dp),
-                        tint = MaterialTheme.colorScheme.secondary
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.width(14.dp))
-
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(2.dp)
-            ) {
-
-                Text(
-                    text = doctor.fullName,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-
-                Text(
-                    text = doctor.cmp,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-
-                        Icon(
-                            imageVector = Icons.Outlined.Phone,
-                            contentDescription = null,
-                            modifier = Modifier.size(12.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-
-                        Text(
-                            text = doctor.phone,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-
-                        Icon(
-                            imageVector = Icons.Outlined.Email,
-                            contentDescription = null,
-                            modifier = Modifier.size(12.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-
-                        Text(
-                            text = doctor.email,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
             }
         }
     }

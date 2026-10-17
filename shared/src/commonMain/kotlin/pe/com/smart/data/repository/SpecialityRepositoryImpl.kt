@@ -56,14 +56,14 @@ class SpecialityRepositoryImpl(
     override suspend fun createSpeciality(
         name: String,
         description: String,
-        active: Boolean
+        deleted: Boolean
     ): Result<Unit> {
         return try {
             apiService.createSpeciality(
                 SpecialityRequestDto(
                     name = name,
                     description = description,
-                    active = active
+                    deleted = deleted
                 )
             )
             Result.success(Unit)
@@ -76,7 +76,7 @@ class SpecialityRepositoryImpl(
         id: Int,
         name: String,
         description: String,
-        active: Boolean
+        deleted: Boolean
     ): Result<Unit> {
         return try {
             apiService.updateSpeciality(
@@ -84,7 +84,7 @@ class SpecialityRepositoryImpl(
                 request = SpecialityRequestDto(
                     name = name,
                     description = description,
-                    active = active
+                    deleted = deleted
                 )
             )
             Result.success(Unit)

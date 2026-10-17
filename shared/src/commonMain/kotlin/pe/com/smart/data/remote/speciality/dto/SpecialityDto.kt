@@ -7,5 +7,5 @@ data class SpecialityDto(
     val id: Int? = null,
     val name: String? = null,
     val description: String? = null,
-    val active: Boolean? = true
+    val deleted: Boolean? = false
 )

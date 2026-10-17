@@ -6,5 +6,5 @@ import kotlinx.serialization.Serializable
 data class SpecialityRequestDto(
     val name: String,
     val description: String,
-    val active: Boolean = true
+    val deleted: Boolean = false
 )
