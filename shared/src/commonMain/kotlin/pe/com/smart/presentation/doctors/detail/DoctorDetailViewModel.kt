@@ -9,10 +9,9 @@ import kotlinx.coroutines.launch
 import pe.com.smart.data.remote.ApiProvider
 import pe.com.smart.domain.repository.DoctorRepository
 
-class DoctorDetailViewModel  : ViewModel() {
-
-    private val repository: DoctorRepository =
-        ApiProvider.doctorRepository
+class DoctorDetailViewModel(
+    private val repository: DoctorRepository = ApiProvider.doctorRepository
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DoctorDetailUiState())
     val uiState: StateFlow<DoctorDetailUiState> =

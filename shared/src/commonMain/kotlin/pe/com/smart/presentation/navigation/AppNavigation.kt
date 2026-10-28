@@ -38,7 +38,7 @@ import pe.com.smart.data.local.SessionManager
 import pe.com.smart.data.local.TokenStorage
 import pe.com.smart.presentation.appointments.AppointmentsScreen
 import pe.com.smart.presentation.doctors.DoctorsScreen
-import pe.com.smart.presentation.doctors.DoctorDetailScreen
+import pe.com.smart.presentation.doctors.detail.DoctorDetailScreen
 import pe.com.smart.presentation.doctors.form.DoctorFormScreen
 import pe.com.smart.presentation.home.HomeScreen
 import pe.com.smart.presentation.login.LoginScreen
@@ -1511,9 +1511,6 @@ private fun AppNavHost(
                 DoctorDetailScreen(
                     doctorId = doctorId,
                     refreshKey = doctorDetailRefreshKey,
-                    onBack = {
-                        navController.popBackStack()
-                    },
                     onEdit = { id ->
                         navController.navigate(
                             Routes.doctorEdit(id)
