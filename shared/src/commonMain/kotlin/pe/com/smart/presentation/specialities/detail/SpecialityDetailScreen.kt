@@ -80,7 +80,7 @@ fun SpecialityDetailScreen(
         when {
             uiState.isLoading && uiState.speciality == null -> {
                 AppLoading(
-                    message = "Cargando especialidad..."
+                    message = "Cargando especialidad.."
                 )
             }
 

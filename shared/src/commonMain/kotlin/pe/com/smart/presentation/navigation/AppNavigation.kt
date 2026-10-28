@@ -38,6 +38,8 @@ import pe.com.smart.data.local.SessionManager
 import pe.com.smart.data.local.TokenStorage
 import pe.com.smart.presentation.appointments.AppointmentsScreen
 import pe.com.smart.presentation.doctors.DoctorsScreen
+import pe.com.smart.presentation.doctors.DoctorDetailScreen
+import pe.com.smart.presentation.doctors.form.DoctorFormScreen
 import pe.com.smart.presentation.home.HomeScreen
 import pe.com.smart.presentation.login.LoginScreen
 import pe.com.smart.presentation.patients.PatientsScreen
@@ -109,6 +111,22 @@ fun AppNavigation() {
     }
 
     var patientDetailRefreshKey by
+    remember {
+        mutableIntStateOf(0)
+    }
+
+    /*
+     * ==================================================
+     * REFRESCO DE MÉDICOS
+     * ==================================================
+     */
+
+    var doctorsRefreshKey by
+    remember {
+        mutableIntStateOf(0)
+    }
+
+    var doctorDetailRefreshKey by
     remember {
         mutableIntStateOf(0)
     }
@@ -374,6 +392,12 @@ fun AppNavigation() {
                 specialityDetailRefreshKey =
                     specialityDetailRefreshKey,
 
+                doctorsRefreshKey =
+                    doctorsRefreshKey,
+
+                doctorDetailRefreshKey =
+                    doctorDetailRefreshKey,
+
                 onPatientsChanged = {
 
                     patientsRefreshKey++
@@ -392,6 +416,16 @@ fun AppNavigation() {
                 onSpecialityDetailChanged = {
 
                     specialityDetailRefreshKey++
+                },
+
+                onDoctorsChanged = {
+
+                    doctorsRefreshKey++
+                },
+
+                onDoctorDetailChanged = {
+
+                    doctorDetailRefreshKey++
                 },
 
                 onOpenDrawer = {}
@@ -518,6 +552,12 @@ fun AppNavigation() {
                     specialityDetailRefreshKey =
                         specialityDetailRefreshKey,
 
+                    doctorsRefreshKey =
+                        doctorsRefreshKey,
+
+                    doctorDetailRefreshKey =
+                        doctorDetailRefreshKey,
+
                     onPatientsChanged = {
 
                         patientsRefreshKey++
@@ -536,6 +576,16 @@ fun AppNavigation() {
                     onSpecialityDetailChanged = {
 
                         specialityDetailRefreshKey++
+                    },
+
+                    onDoctorsChanged = {
+
+                        doctorsRefreshKey++
+                    },
+
+                    onDoctorDetailChanged = {
+
+                        doctorDetailRefreshKey++
                     },
 
                     onOpenDrawer = {
@@ -628,10 +678,14 @@ private fun AppNavHost(
     patientDetailRefreshKey: Int,
     specialitiesRefreshKey: Int,
     specialityDetailRefreshKey: Int,
+    doctorsRefreshKey: Int,
+    doctorDetailRefreshKey: Int,
     onPatientsChanged: () -> Unit,
     onPatientDetailChanged: () -> Unit,
     onSpecialitiesChanged: () -> Unit,
     onSpecialityDetailChanged: () -> Unit,
+    onDoctorsChanged: () -> Unit,
+    onDoctorDetailChanged: () -> Unit,
     onOpenDrawer: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -1322,10 +1376,231 @@ private fun AppNavHost(
             ) { innerPadding ->
 
                 DoctorsScreen(
+                    refreshKey = doctorsRefreshKey,
+                    onDoctorClick = { doctorId ->
+                        navController.navigate(
+                            Routes.doctorDetail(
+                                doctorId
+                            )
+                        )
+                    },
+                    onCreateDoctorClick = {
+                        navController.navigate(
+                            Routes.DOCTOR_CREATE
+                        )
+                    },
                     modifier =
                         Modifier.padding(
                             innerPadding
                         )
+                )
+            }
+        }
+
+        /*
+         * =================================================
+         * NUEVO MÉDICO
+         * =================================================
+         */
+
+        composable(
+            route =
+                Routes.DOCTOR_CREATE,
+
+            enterTransition = {
+                slideInFromRight()
+            },
+            exitTransition = {
+                noExitTransition()
+            },
+            popEnterTransition = {
+                noEnterTransition()
+            },
+            popExitTransition = {
+                slideOutToRight()
+            }
+        ) {
+            var backRequestKey by
+            remember {
+                mutableIntStateOf(0)
+            }
+
+            AppScreenScaffold(
+                title =
+                    "Nuevo médico",
+
+                currentRoute =
+                    Routes.DOCTOR_CREATE,
+
+                showBack =
+                    true,
+
+                onBackClick = {
+                    backRequestKey++
+                }
+            ) { innerPadding ->
+
+                DoctorFormScreen(
+                    doctorId = null,
+                    backRequestKey = backRequestKey,
+                    onBackConfirmed = {
+                        navController.popBackStack()
+                    },
+                    onSaved = {
+                        onDoctorsChanged()
+                        navController.popBackStack()
+                    },
+                    modifier = Modifier.padding(innerPadding)
+                )
+            }
+        }
+
+        /*
+         * =================================================
+         * DETALLE DEL MÉDICO
+         * =================================================
+         */
+
+        composable(
+            route =
+                Routes.DOCTOR_DETAIL,
+
+            arguments =
+                listOf(
+                    navArgument("doctorId") {
+                        type = NavType.IntType
+                    }
+                ),
+
+            enterTransition = {
+                slideInFromRight()
+            },
+            exitTransition = {
+                noExitTransition()
+            },
+            popEnterTransition = {
+                noEnterTransition()
+            },
+            popExitTransition = {
+                slideOutToRight()
+            }
+        ) { backStackEntry ->
+            val doctorId =
+                backStackEntry
+                    .arguments
+                    ?.read {
+                        getIntOrNull("doctorId")
+                    }
+                    ?: return@composable
+
+            AppScreenScaffold(
+                title =
+                    "Detalle del médico",
+
+                currentRoute =
+                    Routes.DOCTOR_DETAIL,
+
+                showBack =
+                    true,
+
+                onBackClick = {
+                    navController.popBackStack()
+                }
+            ) { innerPadding ->
+
+                DoctorDetailScreen(
+                    doctorId = doctorId,
+                    refreshKey = doctorDetailRefreshKey,
+                    onBack = {
+                        navController.popBackStack()
+                    },
+                    onEdit = { id ->
+                        navController.navigate(
+                            Routes.doctorEdit(id)
+                        )
+                    },
+                    onDeleted = {
+                        onDoctorsChanged()
+                        navController.popBackStack(
+                            route = Routes.DOCTORS,
+                            inclusive = false
+                        )
+                    },
+                    modifier = Modifier.padding(innerPadding)
+                )
+            }
+        }
+
+        /*
+         * =================================================
+         * EDITAR MÉDICO
+         * =================================================
+         */
+
+        composable(
+            route =
+                Routes.DOCTOR_EDIT,
+
+            arguments =
+                listOf(
+                    navArgument("doctorId") {
+                        type = NavType.IntType
+                    }
+                ),
+
+            enterTransition = {
+                slideInFromRight()
+            },
+            exitTransition = {
+                noExitTransition()
+            },
+            popEnterTransition = {
+                noEnterTransition()
+            },
+            popExitTransition = {
+                slideOutToRight()
+            }
+        ) { backStackEntry ->
+            val doctorId =
+                backStackEntry
+                    .arguments
+                    ?.read {
+                        getIntOrNull("doctorId")
+                    }
+                    ?: return@composable
+
+            var backRequestKey by
+            remember {
+                mutableIntStateOf(0)
+            }
+
+            AppScreenScaffold(
+                title =
+                    "Editar médico",
+
+                currentRoute =
+                    Routes.DOCTOR_EDIT,
+
+                showBack =
+                    true,
+
+                onBackClick = {
+                    backRequestKey++
+                }
+            ) { innerPadding ->
+
+                DoctorFormScreen(
+                    doctorId = doctorId,
+                    backRequestKey = backRequestKey,
+                    onBackConfirmed = {
+                        navController.popBackStack()
+                    },
+                    onSaved = {
+                        onDoctorsChanged()
+                        onDoctorDetailChanged()
+                        navController.popBackStack()
+                    },
+                    modifier = Modifier.padding(innerPadding)
                 )
             }
         }
