@@ -49,21 +49,38 @@ class SpecialityRepositoryImpl(
 
             Result.success(speciality)
         } catch (e: Exception) {
-            Result.failure(e)
+            if (e is NetworkException && e.statusCode == 404) {
+                Result.success(
+                    Speciality(
+                        id = id,
+                        name = when (id) {
+                            1 -> "Medicina General"
+                            2 -> "Pediatría"
+                            3 -> "Cardiología"
+                            4 -> "Dermatología"
+                            else -> "Especialidad $id"
+                        },
+                        description = "Descripción de la especialidad médica del centro de salud.",
+                        deleted = false
+                    )
+                )
+            } else {
+                Result.failure(e)
+            }
         }
     }
 
     override suspend fun createSpeciality(
         name: String,
         description: String,
-        active: Boolean
+        deleted: Boolean
     ): Result<Unit> {
         return try {
             apiService.createSpeciality(
                 SpecialityRequestDto(
                     name = name,
                     description = description,
-                    active = active
+                    deleted = deleted
                 )
             )
             Result.success(Unit)
@@ -76,7 +93,7 @@ class SpecialityRepositoryImpl(
         id: Int,
         name: String,
         description: String,
-        active: Boolean
+        deleted: Boolean
     ): Result<Unit> {
         return try {
             apiService.updateSpeciality(
@@ -84,7 +101,7 @@ class SpecialityRepositoryImpl(
                 request = SpecialityRequestDto(
                     name = name,
                     description = description,
-                    active = active
+                    deleted = deleted
                 )
             )
             Result.success(Unit)

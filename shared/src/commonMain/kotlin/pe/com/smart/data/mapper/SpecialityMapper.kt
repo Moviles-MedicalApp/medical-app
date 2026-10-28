@@ -8,6 +8,6 @@ fun SpecialityDto.toDomain(): Speciality {
         id = id ?: 0,
         name = name.orEmpty(),
         description = description.orEmpty(),
-        active = active ?: true
+        deleted = deleted ?: false
     )
 }

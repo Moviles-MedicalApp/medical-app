@@ -4,9 +4,11 @@ data class Doctor(
     val id: Int,
     val name: String,
     val lastName: String,
-    val fullName: String,
-    val speciality: String,
-    val cmp: String,
+    val email: String,
     val phone: String,
-    val email: String
-)
+    val specialityId: Int,
+    val specialityName: String = "",
+    val deleted: Boolean = false
+) {
+    val fullName: String get() = "$name $lastName"
+}
