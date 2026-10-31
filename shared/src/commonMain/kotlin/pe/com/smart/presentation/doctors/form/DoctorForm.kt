@@ -18,8 +18,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -35,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import pe.com.smart.domain.model.Speciality
 
 @Composable
+@OptIn(ExperimentalMaterial3Api::class)
 fun DoctorForm(
     state: DoctorFormUiState,
     specialities: List<Speciality>,
@@ -164,12 +167,19 @@ fun DoctorForm(
                     }
                 )
 
-                Column {
+                ExposedDropdownMenuBox(
+                    expanded = expanded,
+                    onExpandedChange = { expanded = it },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
                     OutlinedTextField(
                         value = state.specialityName,
                         onValueChange = {},
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .menuAnchor(),
                         readOnly = true,
+                        enabled = specialities.isNotEmpty(),
                         label = { Text("Especialidad") },
                         placeholder = { Text("Selecciona una especialidad") },
                         leadingIcon = {
@@ -179,33 +189,21 @@ fun DoctorForm(
                             )
                         },
                         trailingIcon = {
-                            Text(
-                                text = if (expanded) "▲" else "▼",
-                                modifier = Modifier.padding(end = 12.dp)
-                            )
+                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
                         },
                         isError = state.specialityError != null,
                         supportingText = {
-                            state.specialityError?.let { Text(it) }
+                            val message = state.specialityError
+                                ?: if (specialities.isEmpty()) {
+                                    "No hay especialidades disponibles."
+                                } else {
+                                    null
+                                }
+                            message?.let { Text(it) }
                         }
                     )
 
-                    // El botón abre las opciones disponibles.
-                    Button(
-                        onClick = { expanded = true },
-                        modifier = Modifier.fillMaxWidth(),
-                        enabled = specialities.isNotEmpty()
-                    ) {
-                        Text(
-                            if (specialities.isEmpty()) {
-                                "No hay especialidades disponibles"
-                            } else {
-                                "Elegir especialidad"
-                            }
-                        )
-                    }
-
-                    DropdownMenu(
+                    ExposedDropdownMenu(
                         expanded = expanded,
                         onDismissRequest = { expanded = false }
                     ) {
