@@ -166,6 +166,12 @@ object Routes {
     const val MEDICAL_SCHEDULES =
         "medical_schedules"
 
+    const val MEDICAL_SCHEDULE_MANAGE =
+        "medical_schedule_manage/{doctorId}"
+
+    fun medicalScheduleManage(doctorId: Int): String =
+        "medical_schedule_manage/$doctorId"
+
     const val MEDICAL_SCHEDULE_CREATE =
         "medical_schedule_create"
 

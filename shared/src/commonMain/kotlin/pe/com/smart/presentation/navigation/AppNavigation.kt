@@ -46,6 +46,7 @@ import pe.com.smart.presentation.patients.PatientsScreen
 import pe.com.smart.presentation.patients.detail.PatientDetailScreen
 import pe.com.smart.presentation.patients.form.PatientFormScreen
 import pe.com.smart.presentation.schedules.MedicalSchedulesScreen
+import pe.com.smart.presentation.schedules.ScheduleManagementScreen
 import pe.com.smart.presentation.specialities.SpecialitiesScreen
 import pe.com.smart.presentation.specialities.detail.SpecialityDetailScreen
 import pe.com.smart.presentation.specialities.form.SpecialityFormScreen
@@ -1960,11 +1961,30 @@ private fun AppNavHost(
             ) { innerPadding ->
 
                 MedicalSchedulesScreen(
+                    onManageDoctor = { doctorId ->
+                        navController.navigate(Routes.medicalScheduleManage(doctorId))
+                    },
                     modifier =
                         Modifier.padding(
                             innerPadding
                         )
                 )
+            }
+        }
+
+        composable(
+            route = Routes.MEDICAL_SCHEDULE_MANAGE,
+            arguments = listOf(navArgument("doctorId") { type = NavType.IntType })
+        ) { backStackEntry ->
+            val doctorId = backStackEntry.arguments?.read { getIntOrNull("doctorId") }
+                ?: return@composable
+            AppScreenScaffold(
+                title = "Gestionar horarios",
+                currentRoute = Routes.MEDICAL_SCHEDULE_MANAGE,
+                showBack = true,
+                onBackClick = { navController.popBackStack() }
+            ) { innerPadding ->
+                ScheduleManagementScreen(doctorId, Modifier.padding(innerPadding))
             }
         }
     }
