@@ -30,7 +30,7 @@ class SpecialityFormViewModel(
 
     private var originalName: String = ""
     private var originalDescription: String = ""
-    private var originalActive: Boolean = true
+    private var originalDeleted: Boolean = false
 
     init {
         if (specialityId != null) {
@@ -50,12 +50,12 @@ class SpecialityFormViewModel(
                 .onSuccess { speciality ->
                     originalName = speciality.name
                     originalDescription = speciality.description
-                    originalActive = speciality.active
+                    originalDeleted = speciality.deleted
 
                     _uiState.value = _uiState.value.copy(
                         name = speciality.name,
                         description = speciality.description,
-                        active = speciality.active,
+                        deleted = speciality.deleted,
                         hasChanges = false,
                         isLoading = false,
                         error = null
@@ -94,9 +94,9 @@ class SpecialityFormViewModel(
         updateHasChanges()
     }
 
-    fun onActiveChange(value: Boolean) {
+    fun onDeletedChange(value: Boolean) {
         _uiState.value = _uiState.value.copy(
-            active = value
+            deleted = value
         )
         updateHasChanges()
     }
@@ -108,7 +108,7 @@ class SpecialityFormViewModel(
         } else {
             state.name != originalName ||
                     state.description != originalDescription ||
-                    state.active != originalActive
+                    state.deleted != originalDeleted
         }
 
         _uiState.value = state.copy(hasChanges = hasChanges)
@@ -127,14 +127,14 @@ class SpecialityFormViewModel(
                 repository.createSpeciality(
                     name = state.name.trim(),
                     description = state.description.trim(),
-                    active = state.active
+                    deleted = state.deleted
                 )
             } else {
                 repository.updateSpeciality(
                     id = specialityId,
                     name = state.name.trim(),
                     description = state.description.trim(),
-                    active = state.active
+                    deleted = state.deleted
                 )
             }
 

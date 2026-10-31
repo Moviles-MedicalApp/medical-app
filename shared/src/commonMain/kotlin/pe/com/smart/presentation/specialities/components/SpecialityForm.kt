@@ -31,7 +31,7 @@ fun SpecialityForm(
     isEditing: Boolean,
     onNameChange: (String) -> Unit,
     onDescriptionChange: (String) -> Unit,
-    onActiveChange: (Boolean) -> Unit,
+    onDeletedChange: (Boolean) -> Unit,
     onSave: () -> Unit,
     buttonText: String,
     modifier: Modifier = Modifier
@@ -107,15 +107,15 @@ fun SpecialityForm(
                         fontWeight = FontWeight.SemiBold
                     )
                     Text(
-                        text = if (state.active) "Disponible para consultas" else "Deshabilitada temporalmente",
+                        text = if (!state.deleted) "Disponible para consultas" else "Deshabilitada temporalmente",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
 
                 Switch(
-                    checked = state.active,
-                    onCheckedChange = onActiveChange
+                    checked = !state.deleted,
+                    onCheckedChange = { onDeletedChange(!it) }
                 )
             }
         }

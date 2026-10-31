@@ -8,7 +8,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import pe.com.smart.core.ui.message.UiMessageManager
 import pe.com.smart.data.remote.ApiProvider
-import pe.com.smart.domain.model.Doctor
 import pe.com.smart.domain.repository.SpecialityRepository
 
 class SpecialityDetailViewModel(
@@ -41,36 +40,9 @@ class SpecialityDetailViewModel(
             repository
                 .getSpecialityById(specialityId)
                 .onSuccess { speciality ->
-                    /*
-                     * Médicos de prueba o asociados a la especialidad
-                     */
-                    val mockDoctors = listOf(
-                        Doctor(
-                            id = 1,
-                            name = "Carlos",
-                            lastName = "Gómez",
-                            fullName = "Dr. Carlos Gómez",
-                            speciality = speciality.name,
-                            cmp = "CMP 48291",
-                            phone = "987654321",
-                            email = "carlos.gomez@clinica.com"
-                        ),
-                        Doctor(
-                            id = 2,
-                            name = "María",
-                            lastName = "Torres",
-                            fullName = "Dra. María Torres",
-                            speciality = speciality.name,
-                            cmp = "CMP 52910",
-                            phone = "912345678",
-                            email = "maria.torres@clinica.com"
-                        )
-                    )
-
                     _uiState.value =
                         _uiState.value.copy(
                             speciality = speciality,
-                            doctors = mockDoctors,
                             isLoading = false,
                             error = null
                         )

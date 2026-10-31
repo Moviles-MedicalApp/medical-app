@@ -74,7 +74,7 @@ fun SpecialityFormScreen(
                 isEditing = viewModel.isEditing,
                 onNameChange = viewModel::onNameChange,
                 onDescriptionChange = viewModel::onDescriptionChange,
-                onActiveChange = viewModel::onActiveChange,
+                onDeletedChange = viewModel::onDeletedChange,
                 onSave = {
                     viewModel.saveSpeciality(
                         onSuccess = onSaved
