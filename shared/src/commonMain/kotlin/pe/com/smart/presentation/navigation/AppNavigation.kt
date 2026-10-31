@@ -993,7 +993,7 @@ private fun AppNavHost(
                 onNavigate = { route -> navigateMainRoute(navController, Routes.APPOINTMENT_CALENDAR, route) }
             ) { _ ->
                 AppointmentCalendarScreen(
-                    onNewAppointment = { navController.navigate(Routes.appointmentCreate()) },
+                    onNewAppointment = { date -> navController.navigate(Routes.appointmentCreate(date = date)) },
                     // Esta pantalla se dibuja bajo el Scaffold: reservamos una sola vez
                     // el alto visual del encabezado y la barra inferior.
                     modifier = Modifier.padding(top = 52.dp, bottom = 112.dp)
@@ -1006,10 +1006,14 @@ private fun AppNavHost(
             arguments = listOf(navArgument("patientId") {
                 type = NavType.IntType
                 defaultValue = -1
+            }, navArgument("date") {
+                type = NavType.StringType
+                defaultValue = ""
             })
         ) { backStackEntry ->
             val patientId = backStackEntry.arguments?.read { getIntOrNull("patientId") }
                 ?.takeIf { it > 0 }
+            val initialDate = backStackEntry.arguments?.getString("date")?.takeIf { it.isNotBlank() }
             AppScreenScaffold(
                 title = "Nueva cita",
                 currentRoute = Routes.APPOINTMENTS,
@@ -1020,6 +1024,7 @@ private fun AppNavHost(
                     modifier = Modifier.padding(innerPadding),
                     initialCreate = true,
                     initialPatientId = patientId,
+                    initialDate = initialDate,
                     onInitialCreateDismiss = { navController.popBackStack() }
                 )
             }

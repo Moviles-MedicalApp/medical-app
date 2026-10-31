@@ -62,7 +62,17 @@ fun MedicalSchedulesScreen(
             state.isLoading && state.doctors.isEmpty() -> CircularProgressIndicator(Modifier.align(Alignment.Center))
             state.error != null && state.doctors.isEmpty() -> AppError(state.error ?: "No se pudo cargar la agenda.", viewModel::load)
             else -> LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(horizontal = 16.dp, vertical = 20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                item { AgendaHeader(state.doctors.size, state.schedules.size, state.searchQuery, viewModel::onSearchChange, state.selectedDay, viewModel::onDaySelected) }
+                item {
+                    AgendaHeader(
+                        state.doctors.size,
+                        state.schedules.size,
+                        state.doctors.count { doctor -> state.schedules.none { it.doctorId == doctor.id } },
+                        state.searchQuery,
+                        viewModel::onSearchChange,
+                        state.selectedDay,
+                        viewModel::onDaySelected
+                    )
+                }
                 if (doctors.isEmpty()) item { AppEmptyState("Sin horarios", "No se encontraron médicos u horarios con los filtros aplicados.") }
                 else items(doctors, key = { it.id }) { doctor -> ScheduleDoctorCard(doctor, state.schedules.filter { it.doctorId == doctor.id }, onManageDoctor) }
             }
@@ -71,10 +81,17 @@ fun MedicalSchedulesScreen(
 }
 
 @Composable
-private fun AgendaHeader(doctors: Int, schedules: Int, query: String, onQuery: (String) -> Unit, selectedDay: String?, onDay: (String?) -> Unit) {
+private fun AgendaHeader(doctors: Int, schedules: Int, withoutAvailability: Int, query: String, onQuery: (String) -> Unit, selectedDay: String?, onDay: (String?) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text("Resumen de horarios", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
         Text("$doctors médicos · $schedules horarios", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        if (withoutAvailability > 0) {
+            Text(
+                "$withoutAvailability ${if (withoutAvailability == 1) "médico sin disponibilidad configurada" else "médicos sin disponibilidad configurada"}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error
+            )
+        }
         OutlinedTextField(query, onQuery, Modifier.fillMaxWidth(), singleLine = true, label = { Text("Buscar médico o horario") }, leadingIcon = { Icon(Icons.Outlined.Search, null) })
         Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             FilterChip(selectedDay == null, { onDay(null) }, { Text("Todos") }, colors = scheduleFilterChipColors())

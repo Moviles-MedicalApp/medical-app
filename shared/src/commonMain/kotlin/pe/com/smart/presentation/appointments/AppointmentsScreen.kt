@@ -70,6 +70,7 @@ fun AppointmentsScreen(
     modifier: Modifier = Modifier,
     initialCreate: Boolean = false,
     initialPatientId: Int? = null,
+    initialDate: String? = null,
     onInitialCreateDismiss: () -> Unit = {},
     viewModel: AppointmentsViewModel = viewModel()
 ) {
@@ -80,6 +81,7 @@ fun AppointmentsScreen(
     var editor by remember { mutableStateOf<Appointment?>(null) }
     var showEditor by remember { mutableStateOf(false) }
     var cancelling by remember { mutableStateOf<Appointment?>(null) }
+    var detail by remember { mutableStateOf<Appointment?>(null) }
     LaunchedEffect(Unit) { viewModel.load() }
     LaunchedEffect(initialCreate) {
         if (initialCreate) {
@@ -108,13 +110,20 @@ fun AppointmentsScreen(
                 sorted.groupBy { it.appointmentDate }.forEach { (date, dailyAppointments) ->
                     if (dailyAppointments.size > 1) item(key = "date_$date") { Text(friendlyDate(date), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                     items(dailyAppointments, key = { it.id }) {
-                        AppointmentCard(it, onEdit = { editor = it; showEditor = true }, onConfirm = { viewModel.changeStatus(it, "confirm") }, onComplete = { viewModel.changeStatus(it, "complete") }, onCancel = { cancelling = it })
+                        AppointmentCard(
+                            it,
+                            onOpen = { detail = it },
+                            onEdit = { editor = it; showEditor = true },
+                            onConfirm = { viewModel.changeStatus(it, "confirm") },
+                            onComplete = { viewModel.changeStatus(it, "complete") },
+                            onCancel = { cancelling = it }
+                        )
                     }
                 }
             }
         }
     }
-    if (showEditor) AppointmentEditor(editor, state.doctors, state.patients, state.schedules, state.appointments, state.isSaving, initialPatientId, {
+    if (showEditor) AppointmentEditor(editor, state.doctors, state.patients, state.schedules, state.appointments, state.isSaving, initialPatientId, initialDate, {
         showEditor = false
         if (initialCreate) onInitialCreateDismiss()
     }) { reason, date, start, end, patient, doctor ->
@@ -124,6 +133,16 @@ fun AppointmentsScreen(
         }
     }
     AppConfirmDialog(visible = cancelling != null, title = "Cancelar cita", message = "Se cancelará la cita de ${cancelling?.patientFullName} del ${cancelling?.appointmentDate} a las ${cancelling?.startTime?.take(5)}.", confirmText = "Cancelar cita", destructive = true, isLoading = state.isSaving, onConfirm = { cancelling?.let { viewModel.changeStatus(it, "cancel"); cancelling = null } }, onDismiss = { cancelling = null })
+    detail?.let { appointment ->
+        AppointmentDetailSheet(
+            appointment = appointment,
+            onDismiss = { detail = null },
+            onEdit = { detail = null; editor = appointment; showEditor = true },
+            onConfirm = { viewModel.changeStatus(appointment, "confirm"); detail = null },
+            onComplete = { viewModel.changeStatus(appointment, "complete"); detail = null },
+            onCancel = { detail = null; cancelling = appointment }
+        )
+    }
 }
 
 @Composable
@@ -152,9 +171,9 @@ private enum class AppointmentListScope { ACTIVE, HISTORY, ALL }
 @Composable private fun SummaryPill(label: String, value: Int, onClick: () -> Unit) = Surface(modifier = Modifier.clickable(onClick = onClick), shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.surfaceVariant) { Text("$label  $value", Modifier.padding(horizontal = 12.dp, vertical = 8.dp), style = MaterialTheme.typography.labelLarge) }
 
 @Composable
-private fun AppointmentCard(item: Appointment, onEdit: () -> Unit, onConfirm: () -> Unit, onComplete: () -> Unit, onCancel: () -> Unit) {
+private fun AppointmentCard(item: Appointment, onOpen: () -> Unit, onEdit: () -> Unit, onConfirm: () -> Unit, onComplete: () -> Unit, onCancel: () -> Unit) {
     var expanded by remember { mutableStateOf(false) }
-    Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+    Card(Modifier.fillMaxWidth().clickable(onClick = onOpen), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.Top) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text("${friendlyDate(item.appointmentDate)} · ${item.timeRange}", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
@@ -166,7 +185,7 @@ private fun AppointmentCard(item: Appointment, onEdit: () -> Unit, onConfirm: ()
             if (item.status == "SCHEDULED" || item.status == "CONFIRMED") Box {
                 IconButton(onClick = { expanded = true }) { Icon(Icons.Outlined.MoreVert, "Acciones") }
                 DropdownMenu(expanded, { expanded = false }) {
-                    if (item.status == "SCHEDULED") { DropdownMenuItem(text = { Text("Editar") }, leadingIcon = { Icon(Icons.Outlined.Edit, null) }, onClick = { expanded = false; onEdit() }); DropdownMenuItem(text = { Text("Confirmar") }, leadingIcon = { Icon(Icons.Outlined.Check, null) }, onClick = { expanded = false; onConfirm() }) }
+                    if (item.status == "SCHEDULED") { DropdownMenuItem(text = { Text("Reprogramar") }, leadingIcon = { Icon(Icons.Outlined.Edit, null) }, onClick = { expanded = false; onEdit() }); DropdownMenuItem(text = { Text("Confirmar") }, leadingIcon = { Icon(Icons.Outlined.Check, null) }, onClick = { expanded = false; onConfirm() }) }
                     if (item.status == "CONFIRMED") DropdownMenuItem(text = { Text("Completar") }, leadingIcon = { Icon(Icons.Outlined.Check, null) }, onClick = { expanded = false; onComplete() })
                     DropdownMenuItem(text = { Text("Cancelar") }, leadingIcon = { Icon(Icons.Outlined.Close, null) }, onClick = { expanded = false; onCancel() })
                 }
@@ -187,11 +206,49 @@ private fun AppointmentCard(item: Appointment, onEdit: () -> Unit, onConfirm: ()
 
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
-private fun AppointmentEditor(existing: Appointment?, doctors: List<Doctor>, patients: List<Patient>, schedules: List<MedicalSchedule>, appointments: List<Appointment>, saving: Boolean, initialPatientId: Int?, onDismiss: () -> Unit, onSave: (String, String, String, String, Int, Int) -> Unit) {
+private fun AppointmentDetailSheet(
+    appointment: Appointment,
+    onDismiss: () -> Unit,
+    onEdit: () -> Unit,
+    onConfirm: () -> Unit,
+    onComplete: () -> Unit,
+    onCancel: () -> Unit
+) {
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState()) {
+        Column(
+            Modifier.fillMaxWidth().padding(24.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text("Detalle de la cita", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Text("${friendlyDate(appointment.appointmentDate)} · ${appointment.timeRange}", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.titleMedium)
+            StatusBadge(appointment.status)
+            Text(appointment.patientFullName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            Text("${appointment.doctorFullName} · ${appointment.specialityName}", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("Motivo", style = MaterialTheme.typography.labelLarge)
+            Text(appointment.reason, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            when (appointment.status) {
+                "SCHEDULED" -> {
+                    Button(onClick = onConfirm, modifier = Modifier.fillMaxWidth()) { Text("Confirmar cita") }
+                    OutlinedButton(onClick = onEdit, modifier = Modifier.fillMaxWidth()) { Text("Reprogramar") }
+                    OutlinedButton(onClick = onCancel, modifier = Modifier.fillMaxWidth()) { Text("Cancelar cita") }
+                }
+                "CONFIRMED" -> {
+                    Button(onClick = onComplete, modifier = Modifier.fillMaxWidth()) { Text("Completar cita") }
+                    OutlinedButton(onClick = onCancel, modifier = Modifier.fillMaxWidth()) { Text("Cancelar cita") }
+                }
+            }
+            OutlinedButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) { Text("Cerrar") }
+        }
+    }
+}
+
+@Composable
+@OptIn(ExperimentalMaterial3Api::class)
+private fun AppointmentEditor(existing: Appointment?, doctors: List<Doctor>, patients: List<Patient>, schedules: List<MedicalSchedule>, appointments: List<Appointment>, saving: Boolean, initialPatientId: Int?, initialDate: String?, onDismiss: () -> Unit, onSave: (String, String, String, String, Int, Int) -> Unit) {
     var speciality by remember(existing) { mutableStateOf(existing?.specialityName ?: "") }
     var doctorId by remember(existing) { mutableStateOf(existing?.doctorId) }
     var patientId by remember(existing, initialPatientId) { mutableStateOf(existing?.patientId ?: initialPatientId) }
-    var date by remember(existing) { mutableStateOf(existing?.appointmentDate ?: "") }
+    var date by remember(existing, initialDate) { mutableStateOf(existing?.appointmentDate ?: initialDate.orEmpty()) }
     var slot by remember(existing) { mutableStateOf(existing?.let { it.startTime.take(5) to it.endTime.take(5) }) }
     var reason by remember(existing) { mutableStateOf(existing?.reason ?: "") }
     var error by remember { mutableStateOf<String?>(null) }
@@ -199,6 +256,9 @@ private fun AppointmentEditor(existing: Appointment?, doctors: List<Doctor>, pat
     val selectedDoctor = doctors.firstOrNull { it.id == doctorId }
     val day = dayCode(date)
     val available = if (selectedDoctor != null && day != null) appointmentSlots(schedules.filter { it.doctorId == selectedDoctor.id && it.dayOfWeek == day }, appointments.filter { it.doctorId == selectedDoctor.id && it.appointmentDate == date && it.status in setOf("SCHEDULED", "CONFIRMED") && it.id != existing?.id }) else emptyList()
+    LaunchedEffect(selectedDoctor?.id, date, available) {
+        if (existing == null && slot == null) slot = available.firstOrNull()
+    }
     ModalBottomSheet(onDismissRequest = { if (!saving) onDismiss() }, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
         Column(
             Modifier
@@ -225,7 +285,7 @@ private fun AppointmentEditor(existing: Appointment?, doctors: List<Doctor>, pat
                     available.isEmpty() -> Text("No hay horarios disponibles para este día.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     else -> available.chunked(2).forEach { row -> Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) { row.forEach { value -> FilterChip(slot == value, { slot = value }, { Text("${value.first}–${value.second}") }, colors = scheduleFilterChipColors(), modifier = Modifier.weight(1f)) }; if (row.size == 1) Box(Modifier.weight(1f)) } }
                 }
-                slot?.let { Text("Seleccionado: ${friendlyDate(date)} · ${it.first}–${it.second}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary) }
+                slot?.let { Text("${if (existing == null) "Horario sugerido" else "Seleccionado"}: ${friendlyDate(date)} · ${it.first}–${it.second}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary) }
             }
             EditorSection("3", "Paciente y motivo") {
                 Selector("Paciente", patients.firstOrNull { it.id == patientId }?.fullName ?: "Selecciona un paciente", patients.map { it.id to "${it.fullName} · ${it.dni}" }) { patientId = it }

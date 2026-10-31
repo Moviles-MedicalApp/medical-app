@@ -137,10 +137,15 @@ object Routes {
         "appointment_calendar"
 
     const val APPOINTMENT_CREATE =
-        "appointment_create?patientId={patientId}"
+        "appointment_create?patientId={patientId}&date={date}"
 
-    fun appointmentCreate(patientId: Int? = null): String =
-        if (patientId == null) "appointment_create" else "appointment_create?patientId=$patientId"
+    fun appointmentCreate(patientId: Int? = null, date: String? = null): String {
+        val arguments = buildList {
+            patientId?.let { add("patientId=$it") }
+            date?.let { add("date=$it") }
+        }
+        return if (arguments.isEmpty()) "appointment_create" else "appointment_create?${arguments.joinToString("&")}" 
+    }
 
     const val APPOINTMENT_DETAIL =
         "appointment_detail/{appointmentId}"

@@ -52,7 +52,7 @@ import pe.com.smart.presentation.schedules.scheduleFilterChipColors
 
 @Composable
 fun AppointmentCalendarScreen(
-    onNewAppointment: () -> Unit,
+    onNewAppointment: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: AppointmentsViewModel = viewModel()
 ) {
@@ -186,7 +186,7 @@ fun AppointmentCalendarScreen(
                 }
                 Surface(shadowElevation = 4.dp) {
                     Button(
-                        onClick = onNewAppointment,
+                        onClick = { onNewAppointment(date) },
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)
                     ) { Text("Nueva cita") }
                 }

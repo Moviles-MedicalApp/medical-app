@@ -52,9 +52,12 @@ class HomeViewModel : ViewModel() {
                 val patients = async { patientRepository.getPatients() }
                 val doctors = async { ApiProvider.doctorRepository.getDoctors() }
                 val appointments = async { ApiProvider.appointmentRepository.getAppointments() }
+                val schedules = async { ApiProvider.medicalScheduleRepository.getSchedules() }
                 val patientList = patients.await().getOrThrow()
                 val doctorList = doctors.await().getOrThrow()
-                val activeAppointments = appointments.await().getOrThrow()
+                val appointmentList = appointments.await().getOrThrow()
+                val scheduleList = schedules.await().getOrDefault(emptyList())
+                val activeAppointments = appointmentList
                     .filter { it.status == "SCHEDULED" || it.status == "CONFIRMED" }
                     .sortedWith(compareBy<Appointment> { it.appointmentDate }.thenBy { it.startTime })
                 val next = activeAppointments.firstOrNull()
@@ -76,6 +79,12 @@ class HomeViewModel : ViewModel() {
                         doctors = doctorList.size,
 
                         specialities = doctorList.map { it.specialityId }.distinct().size,
+
+                        unconfirmedAppointments = appointmentList.count { it.status == "SCHEDULED" },
+
+                        doctorsWithoutSchedules = doctorList.count { doctor ->
+                            scheduleList.none { it.doctorId == doctor.id }
+                        },
 
                         nextAppointment = next?.let { appointment ->
                             AppointmentSummary(

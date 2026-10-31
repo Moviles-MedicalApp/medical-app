@@ -6,6 +6,8 @@ data class HomeUiState(
     val patients: Int = 0,
     val doctors: Int = 0,
     val specialities: Int = 0,
+    val unconfirmedAppointments: Int = 0,
+    val doctorsWithoutSchedules: Int = 0,
     val nextAppointment: AppointmentSummary? = null,
     val isLoading: Boolean = false,
     val error: String? = null

@@ -205,7 +205,8 @@ fun PatientDetailScreen(
 @Composable
 private fun PatientAppointmentsSummary(
     upcoming: List<Appointment>,
-    history: List<Appointment>
+    history: List<Appointment>,
+    onNewAppointment: () -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -226,6 +227,21 @@ private fun PatientAppointmentsSummary(
                 Text("Próxima: ${appointment.appointmentDate} · ${appointment.timeRange}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
                 Text("${appointment.doctorFullName} · ${appointment.specialityName}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             } ?: Text("No tiene citas activas.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            if (history.isNotEmpty()) {
+                Text("Últimas atenciones", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
+                history.take(3).forEach { appointment ->
+                    Text(
+                        "${appointment.appointmentDate} · ${appointment.timeRange} · ${appointment.specialityName}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            OutlinedButton(onClick = onNewAppointment, modifier = Modifier.fillMaxWidth()) {
+                Icon(Icons.Outlined.CalendarMonth, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text("Agendar cita")
+            }
         }
     }
 }
@@ -455,7 +471,7 @@ private fun PatientDetailContent(
             )
         }
 
-        PatientAppointmentsSummary(upcomingAppointments, appointmentHistory)
+        PatientAppointmentsSummary(upcomingAppointments, appointmentHistory, onNewAppointmentClick)
 
         /* SECCIÓN DE ACCIONES */
         Text(
@@ -471,17 +487,6 @@ private fun PatientDetailContent(
             color =
                 MaterialTheme.colorScheme.onBackground
         )
-
-        Button(
-            onClick = onNewAppointmentClick,
-            enabled = !isDeleting,
-            modifier = Modifier.fillMaxWidth(),
-            shape = MaterialTheme.shapes.extraLarge
-        ) {
-            Icon(Icons.Outlined.CalendarMonth, contentDescription = null)
-            Spacer(Modifier.width(8.dp))
-            Text("Nueva cita para este paciente", fontWeight = FontWeight.SemiBold)
-        }
 
         /* EDITAR */
         Button(

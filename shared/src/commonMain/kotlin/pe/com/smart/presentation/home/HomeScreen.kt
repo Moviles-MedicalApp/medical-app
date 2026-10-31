@@ -166,6 +166,16 @@ private fun HomeContent(
         verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
         item { HomeGreeting(uiState.username) }
+        if (uiState.unconfirmedAppointments > 0 || uiState.doctorsWithoutSchedules > 0) {
+            item {
+                OperationalAlerts(
+                    unconfirmed = uiState.unconfirmedAppointments,
+                    withoutSchedules = uiState.doctorsWithoutSchedules,
+                    onAppointments = onAppointmentsClick,
+                    onDoctors = onDoctorsClick
+                )
+            }
+        }
         item {
             Column {
                 SectionTitle("Acciones rápidas")
@@ -205,6 +215,45 @@ private fun HomeContent(
                     SummaryCard("Especialidades", uiState.specialities.toString(), Icons.Outlined.LocalHospital, onSpecialitiesClick, Modifier.weight(1f))
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun OperationalAlerts(
+    unconfirmed: Int,
+    withoutSchedules: Int,
+    onAppointments: () -> Unit,
+    onDoctors: () -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        SectionTitle("Requiere atención")
+        if (unconfirmed > 0) {
+            AlertCard(
+                "$unconfirmed ${if (unconfirmed == 1) "cita por confirmar" else "citas por confirmar"}",
+                "Revisa la agenda activa para confirmar la atención.",
+                "Ver citas",
+                onAppointments
+            )
+        }
+        if (withoutSchedules > 0) {
+            AlertCard(
+                "$withoutSchedules ${if (withoutSchedules == 1) "médico sin horario" else "médicos sin horario"}",
+                "Configura disponibilidad para habilitar nuevas citas.",
+                "Ver médicos",
+                onDoctors
+            )
+        }
+    }
+}
+
+@Composable
+private fun AlertCard(title: String, description: String, action: String, onClick: () -> Unit) {
+    Card(Modifier.fillMaxWidth().clickable(onClick = onClick), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+            Text(description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSecondaryContainer)
+            Text(action, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
         }
     }
 }
