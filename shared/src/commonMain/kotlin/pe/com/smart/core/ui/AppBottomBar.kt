@@ -3,6 +3,7 @@ package pe.com.smart.core.ui
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.DateRange
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.People
 import androidx.compose.material3.Icon
@@ -85,6 +86,27 @@ fun AppBottomBar(
                     unselectedTextColor =
                         MaterialTheme.colorScheme.onSurfaceVariant
                 )
+        )
+
+
+        NavigationBarItem(
+            selected = currentRoute == Routes.APPOINTMENT_CALENDAR,
+            onClick = { onNavigate(Routes.APPOINTMENT_CALENDAR) },
+            icon = { Icon(Icons.Outlined.DateRange, contentDescription = "Calendario", modifier = Modifier.size(24.dp)) },
+            label = {
+                Text(
+                    text = "Calendario",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = if (currentRoute == Routes.APPOINTMENT_CALENDAR) FontWeight.SemiBold else FontWeight.Normal
+                )
+            },
+            colors = NavigationBarItemDefaults.colors(
+                selectedIconColor = MaterialTheme.colorScheme.primary,
+                selectedTextColor = MaterialTheme.colorScheme.primary,
+                indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         )
 
 

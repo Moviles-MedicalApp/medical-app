@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -100,7 +101,10 @@ fun ScheduleManagementScreen(doctorId: Int, modifier: Modifier = Modifier) {
     when {
         state.loading && state.doctor == null -> Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
         state.error != null && state.doctor == null -> AppError(state.error ?: "No se pudieron cargar los horarios.") { viewModel.load(doctorId) }
-        else -> Column(modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        else -> Column(
+            modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
             Text(state.doctor?.fullName ?: "Gestionar horarios", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
             Text(state.doctor?.specialityName.orEmpty(), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
             Text("${state.schedules.size} horarios · ${state.schedules.sumOf { it.hours() }} h semanales", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)

@@ -37,6 +37,7 @@ import pe.com.smart.core.ui.message.UiMessageManager
 import pe.com.smart.data.local.SessionManager
 import pe.com.smart.data.local.TokenStorage
 import pe.com.smart.presentation.appointments.AppointmentsScreen
+import pe.com.smart.presentation.appointments.AppointmentCalendarScreen
 import pe.com.smart.presentation.doctors.DoctorsScreen
 import pe.com.smart.presentation.doctors.detail.DoctorDetailScreen
 import pe.com.smart.presentation.doctors.form.DoctorFormScreen
@@ -167,6 +168,7 @@ fun AppNavigation() {
         setOf(
             Routes.HOME,
             Routes.APPOINTMENTS,
+            Routes.APPOINTMENT_CALENDAR,
             Routes.PATIENTS,
             Routes.DOCTORS,
             Routes.SPECIALITIES,
@@ -177,6 +179,7 @@ fun AppNavigation() {
         setOf(
             Routes.HOME,
             Routes.APPOINTMENTS,
+            Routes.APPOINTMENT_CALENDAR,
             Routes.PATIENTS
         )
 
@@ -184,6 +187,7 @@ fun AppNavigation() {
         setOf(
             Routes.HOME,
             Routes.APPOINTMENTS,
+            Routes.APPOINTMENT_CALENDAR,
             Routes.PATIENTS,
             Routes.PATIENT_CREATE,
             Routes.PATIENT_DETAIL,
@@ -807,7 +811,7 @@ private fun AppNavHost(
 
             AppScreenScaffold(
                 title =
-                    "Medical App",
+                    "Inicio",
 
                 currentRoute =
                     Routes.HOME,
@@ -904,14 +908,10 @@ private fun AppNavHost(
                     },
 
                     onNewAppointmentClick = {
-
-                        /*
-                         * Próximamente.
-                         */
+                        navController.navigate(Routes.appointmentCreate())
                     },
 
                     onCalendarClick = {
-
                         navigateMainRoute(
                             navController =
                                 navController,
@@ -920,7 +920,7 @@ private fun AppNavHost(
                                 Routes.HOME,
 
                             route =
-                                Routes.MEDICAL_SCHEDULES
+                                Routes.APPOINTMENT_CALENDAR
                         )
                     },
 
@@ -979,6 +979,48 @@ private fun AppNavHost(
                         Modifier.padding(
                             innerPadding
                         )
+                )
+            }
+        }
+
+        composable(route = Routes.APPOINTMENT_CALENDAR) {
+            AppScreenScaffold(
+                title = "Calendario",
+                currentRoute = Routes.APPOINTMENT_CALENDAR,
+                showMenu = true,
+                showBottomBar = true,
+                onMenuClick = onOpenDrawer,
+                onNavigate = { route -> navigateMainRoute(navController, Routes.APPOINTMENT_CALENDAR, route) }
+            ) { _ ->
+                AppointmentCalendarScreen(
+                    onNewAppointment = { navController.navigate(Routes.appointmentCreate()) },
+                    // Esta pantalla se dibuja bajo el Scaffold: reservamos una sola vez
+                    // el alto visual del encabezado y la barra inferior.
+                    modifier = Modifier.padding(top = 52.dp, bottom = 112.dp)
+                )
+            }
+        }
+
+        composable(
+            route = Routes.APPOINTMENT_CREATE,
+            arguments = listOf(navArgument("patientId") {
+                type = NavType.IntType
+                defaultValue = -1
+            })
+        ) { backStackEntry ->
+            val patientId = backStackEntry.arguments?.read { getIntOrNull("patientId") }
+                ?.takeIf { it > 0 }
+            AppScreenScaffold(
+                title = "Nueva cita",
+                currentRoute = Routes.APPOINTMENTS,
+                showBack = true,
+                onBackClick = { navController.popBackStack() }
+            ) { innerPadding ->
+                AppointmentsScreen(
+                    modifier = Modifier.padding(innerPadding),
+                    initialCreate = true,
+                    initialPatientId = patientId,
+                    onInitialCreateDismiss = { navController.popBackStack() }
                 )
             }
         }
@@ -1222,6 +1264,10 @@ private fun AppNavHost(
                                 id
                             )
                         )
+                    },
+
+                    onNewAppointmentClick = { id ->
+                        navController.navigate(Routes.appointmentCreate(id))
                     },
 
                     onDeleted = {

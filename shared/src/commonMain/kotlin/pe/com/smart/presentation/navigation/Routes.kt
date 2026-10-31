@@ -133,8 +133,14 @@ object Routes {
     const val APPOINTMENTS =
         "appointments"
 
+    const val APPOINTMENT_CALENDAR =
+        "appointment_calendar"
+
     const val APPOINTMENT_CREATE =
-        "appointment_create"
+        "appointment_create?patientId={patientId}"
+
+    fun appointmentCreate(patientId: Int? = null): String =
+        if (patientId == null) "appointment_create" else "appointment_create?patientId=$patientId"
 
     const val APPOINTMENT_DETAIL =
         "appointment_detail/{appointmentId}"

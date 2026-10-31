@@ -27,6 +27,7 @@ import androidx.compose.material.icons.outlined.People
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -151,6 +152,92 @@ fun HomeScreen(
 
 @Composable
 private fun HomeContent(
+    uiState: HomeUiState,
+    onAppointmentsClick: () -> Unit,
+    onPatientsClick: () -> Unit,
+    onDoctorsClick: () -> Unit,
+    onSpecialitiesClick: () -> Unit,
+    onNewAppointmentClick: () -> Unit,
+    onCalendarClick: () -> Unit
+) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 32.dp),
+        verticalArrangement = Arrangement.spacedBy(20.dp)
+    ) {
+        item { HomeGreeting(uiState.username) }
+        item {
+            Column {
+                SectionTitle("Acciones rápidas")
+                Spacer(Modifier.height(14.dp))
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    CompactQuickAction("Nueva cita", Icons.Outlined.Add, onNewAppointmentClick, Modifier.weight(1f))
+                    CompactQuickAction("Calendario", Icons.Outlined.CalendarMonth, onCalendarClick, Modifier.weight(1f))
+                    CompactQuickAction("Paciente", Icons.Outlined.People, onPatientsClick, Modifier.weight(1f))
+                }
+            }
+        }
+        item {
+            Column {
+                SectionTitle("Agenda de hoy")
+                Spacer(Modifier.height(14.dp))
+                DashboardAgendaCard(uiState.todayAppointments, onAppointmentsClick, onNewAppointmentClick)
+            }
+        }
+        if (uiState.nextAppointment != null) item {
+            Column {
+                SectionTitle("Próxima cita")
+                Spacer(Modifier.height(14.dp))
+                NextAppointmentCard(uiState.nextAppointment, onClick = onAppointmentsClick)
+            }
+        }
+        item {
+            Column {
+                SectionTitle("Resumen operativo")
+                Spacer(Modifier.height(14.dp))
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    SummaryCard("Pendientes", uiState.todayAppointments.toString(), Icons.Outlined.CalendarMonth, onAppointmentsClick, Modifier.weight(1f))
+                    SummaryCard("Pacientes", uiState.patients.toString(), Icons.Outlined.People, onPatientsClick, Modifier.weight(1f))
+                }
+                Spacer(Modifier.height(12.dp))
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    SummaryCard("Médicos", uiState.doctors.toString(), Icons.Outlined.MedicalServices, onDoctorsClick, Modifier.weight(1f))
+                    SummaryCard("Especialidades", uiState.specialities.toString(), Icons.Outlined.LocalHospital, onSpecialitiesClick, Modifier.weight(1f))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CompactQuickAction(title: String, icon: ImageVector, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Card(modifier.clickable(onClick = onClick), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+        Column(Modifier.fillMaxWidth().padding(vertical = 14.dp, horizontal = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(icon, null, modifier = Modifier.size(24.dp), tint = MaterialTheme.colorScheme.primary)
+            Spacer(Modifier.height(6.dp))
+            Text(title, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold, maxLines = 1)
+        }
+    }
+}
+
+@Composable
+private fun DashboardAgendaCard(pending: Int, onAgenda: () -> Unit, onNew: () -> Unit) {
+    Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+        Column(Modifier.fillMaxWidth().padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Surface(Modifier.size(48.dp), CircleShape, color = MaterialTheme.colorScheme.primaryContainer) { Box(contentAlignment = Alignment.Center) { Icon(Icons.Outlined.CalendarMonth, null, tint = MaterialTheme.colorScheme.primary) } }
+            Spacer(Modifier.height(12.dp))
+            Text(if (pending == 0) "Sin citas pendientes" else "$pending citas pendientes", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(4.dp))
+            Text(if (pending == 0) "La agenda del día está libre" else "Revisa y gestiona tus próximas atenciones", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(Modifier.height(14.dp))
+            if (pending == 0) Button(onClick = onNew) { Icon(Icons.Outlined.Add, null); Text(" Nueva cita") }
+            else Text("Ver agenda", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold, modifier = Modifier.clickable(onClick = onAgenda))
+        }
+    }
+}
+
+@Composable
+private fun LegacyHomeContent(
     uiState: HomeUiState,
     onAppointmentsClick: () -> Unit,
     onPatientsClick: () -> Unit,
@@ -433,7 +520,7 @@ private fun HomeGreeting(
 
         Text(
             text =
-                "Este es el resumen de hoy",
+                "Tu agenda y tareas operativas para hoy",
 
             style =
                 MaterialTheme.typography.bodyLarge,
@@ -490,7 +577,7 @@ private fun SummaryCard(
     Card(
         modifier =
             modifier
-                .height(112.dp)
+                .height(96.dp)
                 .clickable(
                     onClick = onClick
                 ),
@@ -516,7 +603,7 @@ private fun SummaryCard(
                     .fillMaxSize()
                     .padding(
                         horizontal = 16.dp,
-                        vertical = 16.dp
+                        vertical = 14.dp
                     ),
 
             verticalArrangement =

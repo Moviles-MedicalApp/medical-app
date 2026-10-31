@@ -10,10 +10,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Badge
+import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Email
@@ -43,12 +46,14 @@ import pe.com.smart.core.ui.AppConfirmDialog
 import pe.com.smart.core.ui.AppError
 import pe.com.smart.core.ui.AppLoading
 import pe.com.smart.domain.model.Patient
+import pe.com.smart.domain.model.Appointment
 
 @Composable
 fun PatientDetailScreen(
     patientId: Int,
     refreshKey: Int = 0,
     onEditClick: (Int) -> Unit,
+    onNewAppointmentClick: (Int) -> Unit,
     onDeleted: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -125,6 +130,8 @@ fun PatientDetailScreen(
 
                 PatientDetailContent(
                     patient = uiState.patient!!,
+                    upcomingAppointments = uiState.upcomingAppointments,
+                    appointmentHistory = uiState.appointmentHistory,
                     isDeleting = uiState.isDeleting,
                     error = uiState.error,
                     onEditClick = {
@@ -132,6 +139,7 @@ fun PatientDetailScreen(
                             uiState.patient!!.id
                         )
                     },
+                    onNewAppointmentClick = { onNewAppointmentClick(uiState.patient!!.id) },
                     onDeleteClick = {
                         showDeleteDialog = true
                     }
@@ -194,6 +202,34 @@ fun PatientDetailScreen(
     )
 }
 
+@Composable
+private fun PatientAppointmentsSummary(
+    upcoming: List<Appointment>,
+    history: List<Appointment>
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(22.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Column(
+            modifier = Modifier.padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text("Citas del paciente", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            Text(
+                "${upcoming.size} activas · ${history.size} en historial",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            upcoming.firstOrNull()?.let { appointment ->
+                Text("Próxima: ${appointment.appointmentDate} · ${appointment.timeRange}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
+                Text("${appointment.doctorFullName} · ${appointment.specialityName}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            } ?: Text("No tiene citas activas.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
 
 /*
  * =====================================================
@@ -204,9 +240,12 @@ fun PatientDetailScreen(
 @Composable
 private fun PatientDetailContent(
     patient: Patient,
+    upcomingAppointments: List<Appointment>,
+    appointmentHistory: List<Appointment>,
     isDeleting: Boolean,
     error: String?,
     onEditClick: () -> Unit,
+    onNewAppointmentClick: () -> Unit,
     onDeleteClick: () -> Unit
 ) {
 
@@ -214,6 +253,7 @@ private fun PatientDetailContent(
         modifier =
             Modifier
                 .fillMaxSize()
+                .verticalScroll(rememberScrollState())
                 .padding(
                     horizontal = 20.dp,
                     vertical = 20.dp
@@ -415,11 +455,9 @@ private fun PatientDetailContent(
             )
         }
 
-        /*
-         * =================================================
-         * SECCIÓN DE ACCIONES
-         * =================================================
-         */
+        PatientAppointmentsSummary(upcomingAppointments, appointmentHistory)
+
+        /* SECCIÓN DE ACCIONES */
         Text(
             text =
                 "Acciones",
@@ -434,9 +472,18 @@ private fun PatientDetailContent(
                 MaterialTheme.colorScheme.onBackground
         )
 
-        /*
-         * EDITAR
-         */
+        Button(
+            onClick = onNewAppointmentClick,
+            enabled = !isDeleting,
+            modifier = Modifier.fillMaxWidth(),
+            shape = MaterialTheme.shapes.extraLarge
+        ) {
+            Icon(Icons.Outlined.CalendarMonth, contentDescription = null)
+            Spacer(Modifier.width(8.dp))
+            Text("Nueva cita para este paciente", fontWeight = FontWeight.SemiBold)
+        }
+
+        /* EDITAR */
         Button(
             onClick =
                 onEditClick,

@@ -9,6 +9,7 @@ import kotlinx.coroutines.launch
 import pe.com.smart.core.ui.message.UiMessageManager
 import pe.com.smart.data.remote.ApiProvider
 import pe.com.smart.domain.repository.PatientRepository
+import pe.com.smart.domain.model.Appointment
 
 class PatientDetailViewModel(
     private val patientId: Int
@@ -45,9 +46,22 @@ class PatientDetailViewModel(
                 )
                 .onSuccess { patient ->
 
+                    val appointments: List<Appointment> = ApiProvider.appointmentRepository
+                        .getAppointments()
+                        .getOrDefault(emptyList<Appointment>())
+                        .filter { it.patientId == patientId }
+                    val upcoming = appointments
+                        .filter { it.status == "SCHEDULED" || it.status == "CONFIRMED" }
+                        .sortedWith(compareBy<Appointment> { it.appointmentDate }.thenBy { it.startTime })
+                    val history = appointments
+                        .filter { it.status == "COMPLETED" || it.status == "CANCELLED" }
+                        .sortedWith(compareByDescending<Appointment> { it.appointmentDate }.thenByDescending { it.startTime })
+
                     _uiState.value =
                         _uiState.value.copy(
                             patient = patient,
+                            upcomingAppointments = upcoming,
+                            appointmentHistory = history,
                             isLoading = false,
                             error = null
                         )

@@ -57,7 +57,7 @@ fun AppDrawer(
 
     ModalDrawerSheet(
         modifier =
-            Modifier.width(300.dp),
+            Modifier.width(320.dp),
 
         drawerContainerColor =
             MaterialTheme.colorScheme.surface
@@ -74,7 +74,7 @@ fun AppDrawer(
 
             Spacer(
                 modifier =
-                    Modifier.height(24.dp)
+                    Modifier.height(20.dp)
             )
 
             /*
@@ -152,6 +152,13 @@ fun AppDrawer(
             )
 
             AppDrawerItem(
+                label = "Calendario",
+                icon = Icons.Outlined.CalendarMonth,
+                selected = currentRoute == Routes.APPOINTMENT_CALENDAR,
+                onClick = { onNavigate(Routes.APPOINTMENT_CALENDAR) }
+            )
+
+            AppDrawerItem(
                 label =
                     "Pacientes",
 
@@ -224,7 +231,7 @@ fun AppDrawer(
 
             AppDrawerItem(
                 label =
-                    "Agenda médica",
+                    "Horarios médicos",
 
                 icon =
                     Icons.Outlined.Schedule,
