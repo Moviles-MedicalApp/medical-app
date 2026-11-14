@@ -1,5 +1,7 @@
+
 package pe.com.smart.presentation.specialities.detail
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,18 +13,19 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.MedicalServices
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -45,6 +48,15 @@ import pe.com.smart.core.ui.AppError
 import pe.com.smart.core.ui.AppLoading
 import pe.com.smart.domain.model.Speciality
 
+/**
+ * Detalle de una especialidad médica.
+ *
+ * Conserva:
+ * - Carga por specialityId.
+ * - Recarga mediante refreshKey.
+ * - Edición.
+ * - Eliminación con confirmación.
+ */
 @Composable
 fun SpecialityDetailScreen(
     specialityId: Int,
@@ -53,38 +65,42 @@ fun SpecialityDetailScreen(
     onDeleted: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val viewModel: SpecialityDetailViewModel = viewModel(
+        key = "speciality_detail_$specialityId"
+    ) {
+        SpecialityDetailViewModel(
+            specialityId = specialityId
+        )
+    }
 
-    val viewModel: SpecialityDetailViewModel =
-        viewModel(
-            key = "speciality_detail_$specialityId"
-        ) {
-            SpecialityDetailViewModel(
-                specialityId = specialityId
-            )
-        }
+    val uiState by viewModel.uiState
+        .collectAsStateWithLifecycle()
 
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-
-    var showDeleteDialog by remember {
+    var showDeleteDialog by remember(specialityId) {
         mutableStateOf(false)
     }
 
-    LaunchedEffect(specialityId, refreshKey) {
+    LaunchedEffect(
+        specialityId,
+        refreshKey,
+        viewModel
+    ) {
         viewModel.loadSpeciality()
     }
 
     Box(
         modifier = modifier.fillMaxSize()
     ) {
-
         when {
-            uiState.isLoading && uiState.speciality == null -> {
+            uiState.isLoading &&
+                    uiState.speciality == null -> {
                 AppLoading(
-                    message = "Cargando especialidad.."
+                    message = "Cargando especialidad..."
                 )
             }
 
-            uiState.error != null && uiState.speciality == null -> {
+            uiState.error != null &&
+                    uiState.speciality == null -> {
                 AppError(
                     message = uiState.error
                         ?: "No se pudo cargar la especialidad.",
@@ -93,12 +109,15 @@ fun SpecialityDetailScreen(
             }
 
             uiState.speciality != null -> {
+                val speciality = uiState.speciality!!
+
                 SpecialityDetailContent(
-                    speciality = uiState.speciality!!,
+                    speciality = speciality,
                     isDeleting = uiState.isDeleting,
+                    isLoading = uiState.isLoading,
                     error = uiState.error,
                     onEditClick = {
-                        onEditClick(uiState.speciality!!.id)
+                        onEditClick(speciality.id)
                     },
                     onDeleteClick = {
                         showDeleteDialog = true
@@ -119,182 +138,384 @@ fun SpecialityDetailScreen(
         destructive = true,
         isLoading = uiState.isDeleting,
         onConfirm = {
-            viewModel.deleteSpeciality(
-                onSuccess = {
-                    showDeleteDialog = false
-                    onDeleted()
-                }
-            )
+            if (!uiState.isDeleting) {
+                viewModel.deleteSpeciality(
+                    onSuccess = {
+                        showDeleteDialog = false
+                        onDeleted()
+                    }
+                )
+            }
         },
         onDismiss = {
-            showDeleteDialog = false
+            if (!uiState.isDeleting) {
+                showDeleteDialog = false
+            }
         }
     )
 }
 
+/**
+ * Contenido principal del detalle.
+ */
 @Composable
 private fun SpecialityDetailContent(
     speciality: Speciality,
     isDeleting: Boolean,
+    isLoading: Boolean,
     error: String?,
     onEditClick: () -> Unit,
     onDeleteClick: () -> Unit
 ) {
-
     Column(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 20.dp, vertical = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(20.dp)
-    ) {
-
-        /*
-         * =================================================
-         * 1. TARJETA PRINCIPAL (DATOS DE LA ESPECIALIDAD)
-         * =================================================
-         */
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(22.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface
+            .padding(
+                horizontal = 16.dp,
+                vertical = 20.dp
             ),
-            elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Surface(
-                        modifier = Modifier.size(58.dp),
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.primaryContainer
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                imageVector = Icons.Outlined.MedicalServices,
-                                contentDescription = null,
-                                modifier = Modifier.size(28.dp),
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.width(16.dp))
-
-                    Column(
-                        modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Text(
-                            text = speciality.name,
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.CheckCircle,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp),
-                                tint = if (!speciality.deleted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
-                            )
-                            Text(
-                                text = if (!speciality.deleted) "Estado: Activa" else "Estado: Inactiva",
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Medium,
-                                color = if (!speciality.deleted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
-                            )
-                        }
-                    }
-                }
-
-                if (speciality.description.isNotBlank()) {
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(
-                            text = "Descripción",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text = speciality.description,
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                }
-            }
-        }
+        verticalArrangement =
+            Arrangement.spacedBy(18.dp)
+    ) {
+        SpecialityProfileCard(
+            speciality = speciality
+        )
 
         if (!error.isNullOrBlank()) {
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme
+                    .colorScheme.errorContainer
+            ) {
+                Text(
+                    text = error,
+                    modifier = Modifier.padding(14.dp),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme
+                        .colorScheme.onErrorContainer
+                )
+            }
+        }
+
+        SpecialityDescriptionCard(
+            description = speciality.description
+        )
+
+        SpecialityActions(
+            isDeleting = isDeleting,
+            isLoading = isLoading,
+            onEditClick = onEditClick,
+            onDeleteClick = onDeleteClick
+        )
+
+        Spacer(
+            modifier = Modifier.size(12.dp)
+        )
+    }
+}
+
+/**
+ * Tarjeta de perfil y estado.
+ */
+@Composable
+private fun SpecialityProfileCard(
+    speciality: Speciality
+) {
+    val colors = MaterialTheme.colorScheme
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        border = BorderStroke(
+            1.dp,
+            colors.outlineVariant
+        ),
+        colors = CardDefaults.cardColors(
+            containerColor = colors.surface
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 0.dp
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(20.dp),
+            verticalArrangement =
+                Arrangement.spacedBy(16.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement =
+                    Arrangement.spacedBy(14.dp)
+            ) {
+                Surface(
+                    modifier = Modifier.size(64.dp),
+                    shape = RoundedCornerShape(18.dp),
+                    color = colors.primaryContainer
+                ) {
+                    Box(
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector =
+                                Icons.Outlined.MedicalServices,
+                            contentDescription = null,
+                            modifier = Modifier.size(32.dp),
+                            tint = colors.primary
+                        )
+                    }
+                }
+
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement =
+                        Arrangement.spacedBy(6.dp)
+                ) {
+                    Text(
+                        text = speciality.name,
+                        style = MaterialTheme
+                            .typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = colors.onSurface
+                    )
+
+                    Text(
+                        text = "Especialidad médica",
+                        style = MaterialTheme
+                            .typography.bodySmall,
+                        color = colors.onSurfaceVariant
+                    )
+                }
+            }
+
+            HorizontalDivider(
+                color = colors.outlineVariant
+            )
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement =
+                    Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = "Estado de la especialidad",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = colors.onSurfaceVariant,
+                    modifier = Modifier.weight(1f)
+                )
+
+                SpecialityStatus(
+                    isActive = !speciality.deleted
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Indicador de estado.
+ */
+@Composable
+private fun SpecialityStatus(
+    isActive: Boolean
+) {
+    val colors = MaterialTheme.colorScheme
+
+    Surface(
+        shape = RoundedCornerShape(10.dp),
+        color = if (isActive) {
+            colors.primaryContainer
+        } else {
+            colors.errorContainer
+        }
+    ) {
+        Row(
+            modifier = Modifier.padding(
+                horizontal = 10.dp,
+                vertical = 7.dp
+            ),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement =
+                Arrangement.spacedBy(6.dp)
+        ) {
+            Icon(
+                imageVector =
+                    Icons.Outlined.CheckCircle,
+                contentDescription = null,
+                modifier = Modifier.size(16.dp),
+                tint = if (isActive) {
+                    colors.onPrimaryContainer
+                } else {
+                    colors.onErrorContainer
+                }
+            )
+
             Text(
-                text = error,
+                text = if (isActive) {
+                    "Activa"
+                } else {
+                    "Inactiva"
+                },
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = if (isActive) {
+                    colors.onPrimaryContainer
+                } else {
+                    colors.onErrorContainer
+                }
+            )
+        }
+    }
+}
+
+/**
+ * Tarjeta de descripción.
+ */
+@Composable
+private fun SpecialityDescriptionCard(
+    description: String
+) {
+    val colors = MaterialTheme.colorScheme
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        border = BorderStroke(
+            1.dp,
+            colors.outlineVariant
+        ),
+        colors = CardDefaults.cardColors(
+            containerColor = colors.surface
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 0.dp
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(18.dp),
+            verticalArrangement =
+                Arrangement.spacedBy(14.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement =
+                    Arrangement.spacedBy(10.dp)
+            ) {
+                Surface(
+                    modifier = Modifier.size(40.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    color = colors.primaryContainer
+                ) {
+                    Box(
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Info,
+                            contentDescription = null,
+                            tint = colors.primary,
+                            modifier = Modifier.size(21.dp)
+                        )
+                    }
+                }
+
+                Text(
+                    text = "Descripción",
+                    style = MaterialTheme
+                        .typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+
+            HorizontalDivider(
+                color = colors.outlineVariant
+            )
+
+            Text(
+                text = description.ifBlank {
+                    "Esta especialidad no tiene una descripción registrada."
+                },
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.error
+                color = if (description.isBlank()) {
+                    colors.onSurfaceVariant
+                } else {
+                    colors.onSurface
+                }
+            )
+        }
+    }
+}
+
+/**
+ * Acciones administrativas.
+ */
+@Composable
+private fun SpecialityActions(
+    isDeleting: Boolean,
+    isLoading: Boolean,
+    onEditClick: () -> Unit,
+    onDeleteClick: () -> Unit
+) {
+    Column(
+        verticalArrangement =
+            Arrangement.spacedBy(12.dp)
+    ) {
+        Text(
+            text = "Acciones",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold
+        )
+
+        Button(
+            onClick = onEditClick,
+            enabled = !isDeleting && !isLoading,
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(14.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Edit,
+                contentDescription = null
+            )
+
+            Spacer(
+                modifier = Modifier.width(8.dp)
+            )
+
+            Text(
+                text = "Editar especialidad",
+                fontWeight = FontWeight.SemiBold
             )
         }
 
-        /*
-         * =================================================
-         * 2. ACCIONES
-         * =================================================
-         */
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(
-                text = "Acciones",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onBackground
+        OutlinedButton(
+            onClick = onDeleteClick,
+            enabled = !isDeleting && !isLoading,
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(14.dp),
+            colors =
+                ButtonDefaults.outlinedButtonColors(
+                    contentColor = MaterialTheme
+                        .colorScheme.error
+                )
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Delete,
+                contentDescription = null
             )
 
-            Button(
-                onClick = onEditClick,
-                enabled = !isDeleting,
-                modifier = Modifier.fillMaxWidth(),
-                shape = MaterialTheme.shapes.extraLarge
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.Edit,
-                    contentDescription = null
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "Editar especialidad",
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
+            Spacer(
+                modifier = Modifier.width(8.dp)
+            )
 
-            OutlinedButton(
-                onClick = onDeleteClick,
-                enabled = !isDeleting,
-                modifier = Modifier.fillMaxWidth(),
-                shape = MaterialTheme.shapes.extraLarge,
-                colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = MaterialTheme.colorScheme.error
-                )
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.Delete,
-                    contentDescription = null
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = if (isDeleting) "Eliminando..." else "Eliminar especialidad",
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
+            Text(
+                text = if (isDeleting) {
+                    "Eliminando..."
+                } else {
+                    "Eliminar especialidad"
+                },
+                fontWeight = FontWeight.SemiBold
+            )
         }
     }
 }

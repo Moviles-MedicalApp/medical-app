@@ -1,7 +1,9 @@
+
 package pe.com.smart.presentation.specialities.components
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Search
@@ -13,14 +15,22 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 
+/**
+ * Buscador de especialidades.
+ *
+ * La búsqueda sigue siendo administrada
+ * por SpecialitiesViewModel.
+ */
 @Composable
 fun SpecialitySearchBar(
     query: String,
     onQueryChange: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val colors = MaterialTheme.colorScheme
 
     OutlinedTextField(
         value = query,
@@ -28,7 +38,7 @@ fun SpecialitySearchBar(
         modifier = modifier.fillMaxWidth(),
         placeholder = {
             Text(
-                text = "Buscar especialidades...",
+                text = "Buscar por nombre o descripción...",
                 style = MaterialTheme.typography.bodyMedium
             )
         },
@@ -36,29 +46,34 @@ fun SpecialitySearchBar(
             Icon(
                 imageVector = Icons.Outlined.Search,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                tint = colors.onSurfaceVariant
             )
         },
         trailingIcon = {
             if (query.isNotEmpty()) {
                 IconButton(
-                    onClick = { onQueryChange("") }
+                    onClick = {
+                        onQueryChange("")
+                    }
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.Close,
                         contentDescription = "Limpiar búsqueda",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        tint = colors.onSurfaceVariant
                     )
                 }
             }
         },
-        shape = RoundedCornerShape(16.dp),
         singleLine = true,
+        keyboardOptions = KeyboardOptions(
+            imeAction = ImeAction.Search
+        ),
+        shape = RoundedCornerShape(14.dp),
         colors = OutlinedTextFieldDefaults.colors(
-            focusedContainerColor = MaterialTheme.colorScheme.surface,
-            unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-            focusedBorderColor = MaterialTheme.colorScheme.primary,
-            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+            focusedContainerColor = colors.surface,
+            unfocusedContainerColor = colors.surface,
+            focusedBorderColor = colors.primary,
+            unfocusedBorderColor = colors.outlineVariant
         )
     )
 }

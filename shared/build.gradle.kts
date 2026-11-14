@@ -226,6 +226,17 @@ kotlin {
             implementation(
                 "com.russhwolf:multiplatform-settings-no-arg:1.3.0"
             )
+
+            /*
+             * -------------------------------------------------
+             * DATE & TIME - KOTLIN MULTIPLATFORM
+             * -------------------------------------------------
+             */
+            implementation(
+                "org.jetbrains.kotlinx:kotlinx-datetime:0.6.2"
+            )
+
+
         }
 
 

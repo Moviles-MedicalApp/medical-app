@@ -1,49 +1,59 @@
+
 package pe.com.smart.presentation.home
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.shape.RoundedCornerShape
+
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.EventAvailable
-import androidx.compose.material.icons.outlined.LocalHospital
 import androidx.compose.material.icons.outlined.MedicalServices
 import androidx.compose.material.icons.outlined.People
+import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Schedule
+
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+
+import pe.com.smart.data.local.AccessTokenClaimsDecoder
+import pe.com.smart.data.local.TokenStorage
+import pe.com.smart.presentation.home.components.NextAppointmentCard
+import pe.com.smart.presentation.session.SessionIdentityStore
 
 @Composable
 fun HomeScreen(
@@ -56,1248 +66,919 @@ fun HomeScreen(
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = viewModel()
 ) {
-
-    val uiState by
-    viewModel.uiState
+    val state by viewModel.uiState
         .collectAsStateWithLifecycle()
 
-    LaunchedEffect(Unit) {
-        viewModel.loadDashboard()
+    val identity by SessionIdentityStore.uiState
+        .collectAsStateWithLifecycle()
+
+    val token = TokenStorage.getToken().orEmpty()
+    val claims = AccessTokenClaimsDecoder.decode(token)
+
+    LaunchedEffect(token) {
+        SessionIdentityStore.ensureLoaded()
     }
 
-    Box(
-        modifier =
-            modifier.fillMaxSize()
-    ) {
+    val displayFirstName = when (state.role) {
+        HomeRole.DOCTOR,
+        HomeRole.PATIENT -> {
+            identity.profile?.firstName
+                ?.takeIf { it.isNotBlank() }
+                ?: claims?.displayFirstName
+                ?: state.username
+        }
 
+        else -> {
+            claims?.displayFirstName
+                ?: state.username
+        }
+    }.ifBlank { "Usuario" }
+
+    Box(modifier = modifier.fillMaxSize()) {
         when {
-
-            /*
-             * =============================================
-             * CARGANDO
-             * =============================================
-             */
-            uiState.isLoading -> {
-
+            // Solo mostrar carga completa durante
+            // la primera consulta.
+            state.isLoading &&
+                    state.role == HomeRole.UNKNOWN -> {
                 CircularProgressIndicator(
-                    modifier =
-                        Modifier.align(
-                            Alignment.Center
-                        )
+                    modifier = Modifier.align(
+                        Alignment.Center
+                    )
                 )
             }
 
-            /*
-             * =============================================
-             * ERROR
-             * =============================================
-             */
-            uiState.error != null -> {
-
-                HomeError(
-                    message =
-                        uiState.error
-                            ?: "No se pudo cargar la información.",
-
-                    onRetry =
-                        viewModel::retry,
-
-                    modifier =
-                        Modifier.align(
-                            Alignment.Center
-                        )
+            state.error != null &&
+                    state.role == HomeRole.UNKNOWN -> {
+                DashboardError(
+                    message = state.error
+                        ?: "No se pudo cargar el resumen.",
+                    onRetry = {
+                        viewModel.retry()
+                    },
+                    modifier = Modifier.align(
+                        Alignment.Center
+                    )
                 )
             }
 
-            /*
-             * =============================================
-             * CONTENIDO
-             * =============================================
-             */
             else -> {
+                Column(
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    if (state.error != null) {
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            color = MaterialTheme
+                                .colorScheme.errorContainer,
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                verticalAlignment =
+                                    Alignment.CenterVertically,
+                                horizontalArrangement =
+                                    Arrangement.spacedBy(10.dp)
+                            ) {
+                                Text(
+                                    text = state.error.orEmpty(),
+                                    modifier = Modifier.weight(1f),
+                                    color = MaterialTheme
+                                        .colorScheme.onErrorContainer,
+                                    style = MaterialTheme
+                                        .typography.bodySmall
+                                )
 
-                HomeContent(
-                    uiState =
-                        uiState,
+                                OutlinedButton(
+                                    onClick = {
+                                        viewModel.retry()
+                                    }
+                                ) {
+                                    Text("Reintentar")
+                                }
+                            }
+                        }
+                    }
 
-                    onAppointmentsClick =
-                        onAppointmentsClick,
+                    when (state.role) {
+                        HomeRole.DOCTOR -> {
+                            DoctorHomeContent(
+                                state = state,
+                                firstName = displayFirstName,
+                                onAppointmentsClick =
+                                    onAppointmentsClick,
+                                onRefresh = {
+                                    viewModel.retry()
+                                }
+                            )
+                        }
 
-                    onPatientsClick =
-                        onPatientsClick,
+                        HomeRole.PATIENT -> {
+                            PatientHomeContent(
+                                state = state,
+                                firstName = displayFirstName,
+                                onAppointmentsClick =
+                                    onAppointmentsClick,
+                                onNewAppointmentClick =
+                                    onNewAppointmentClick,
+                                onCalendarClick =
+                                    onCalendarClick,
+                                onRefresh = {
+                                    viewModel.retry()
+                                }
+                            )
+                        }
 
-                    onDoctorsClick =
-                        onDoctorsClick,
+                        HomeRole.ADMIN -> {
+                            AdminHomeContent(
+                                state = state,
+                                firstName = displayFirstName,
+                                onAppointmentsClick =
+                                    onAppointmentsClick,
+                                onPatientsClick =
+                                    onPatientsClick,
+                                onDoctorsClick =
+                                    onDoctorsClick,
+                                onSpecialitiesClick =
+                                    onSpecialitiesClick,
+                                onNewAppointmentClick =
+                                    onNewAppointmentClick,
+                                onCalendarClick =
+                                    onCalendarClick,
+                                onRefresh = {
+                                    viewModel.retry()
+                                }
+                            )
+                        }
 
-                    onSpecialitiesClick =
-                        onSpecialitiesClick,
+                        HomeRole.UNKNOWN -> {
+                            DashboardError(
+                                message =
+                                    "No se pudo identificar el rol del usuario.",
+                                onRetry = {
+                                    viewModel.retry()
+                                },
+                                modifier = Modifier.align(
+                                    Alignment.CenterHorizontally
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+        }
 
-                    onNewAppointmentClick =
-                        onNewAppointmentClick,
+        if (
+            state.isLoading &&
+            state.role != HomeRole.UNKNOWN
+        ) {
+            CircularProgressIndicator(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(12.dp)
+                    .size(22.dp),
+                strokeWidth = 2.dp
+            )
+        }
+    }
+}
 
-                    onCalendarClick =
-                        onCalendarClick
+// =====================================================
+// MÉDICO
+// =====================================================
+
+@Composable
+private fun DoctorHomeContent(
+    state: HomeUiState,
+    firstName: String,
+    onAppointmentsClick: () -> Unit,
+    onRefresh: () -> Unit
+) {
+    DashboardList {
+        item {
+            DashboardGreeting(
+                firstName = firstName,
+                description = "Consulta tu agenda clínica.",
+                onRefresh = onRefresh
+            )
+        }
+
+        item {
+            SectionHeader(
+                title = "Resumen de jornada",
+                subtitle = "Atenciones confirmadas"
+            )
+        }
+
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement =
+                    Arrangement.spacedBy(12.dp)
+            ) {
+                DashboardMetricCard(
+                    title = "Confirmadas hoy",
+                    value = state.todayAppointments.toString(),
+                    icon = Icons.Outlined.EventAvailable,
+                    modifier = Modifier.weight(1f),
+                    onClick = onAppointmentsClick
+                )
+
+                DashboardMetricCard(
+                    title = "Próximas",
+                    value =
+                        state.upcomingAppointments.toString(),
+                    icon = Icons.Outlined.Schedule,
+                    modifier = Modifier.weight(1f),
+                    onClick = onAppointmentsClick
+                )
+            }
+        }
+
+        item {
+            SectionHeader(
+                title = "Próxima atención",
+                subtitle =
+                    "Tu siguiente consulta confirmada"
+            )
+        }
+
+        item {
+            NextAppointmentCard(
+                appointment = state.nextAppointment,
+                isDoctor = true,
+                onClick = onAppointmentsClick
+            )
+        }
+
+        item {
+            DashboardActionCard(
+                title = "Mi agenda",
+                description =
+                    "Consultar mis citas confirmadas",
+                icon = Icons.Outlined.CalendarMonth,
+                onClick = onAppointmentsClick
+            )
+        }
+    }
+}
+
+// =====================================================
+// PACIENTE
+// =====================================================
+
+@Composable
+private fun PatientHomeContent(
+    state: HomeUiState,
+    firstName: String,
+    onAppointmentsClick: () -> Unit,
+    onNewAppointmentClick: () -> Unit,
+    onCalendarClick: () -> Unit,
+    onRefresh: () -> Unit
+) {
+    DashboardList {
+        item {
+            DashboardGreeting(
+                firstName = firstName,
+                description =
+                    "Gestiona tus consultas médicas.",
+                onRefresh = onRefresh
+            )
+        }
+
+        item {
+            SectionHeader(
+                title = "Mis citas",
+                subtitle = "Resumen de tus atenciones"
+            )
+        }
+
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement =
+                    Arrangement.spacedBy(12.dp)
+            ) {
+                DashboardMetricCard(
+                    title = "Citas de hoy",
+                    value = state.todayAppointments.toString(),
+                    icon = Icons.Outlined.EventAvailable,
+                    modifier = Modifier.weight(1f),
+                    onClick = onAppointmentsClick
+                )
+
+                DashboardMetricCard(
+                    title = "Próximas",
+                    value =
+                        state.upcomingAppointments.toString(),
+                    icon = Icons.Outlined.CalendarMonth,
+                    modifier = Modifier.weight(1f),
+                    onClick = onAppointmentsClick
+                )
+            }
+        }
+
+        item {
+            SectionHeader(
+                title = "Próxima consulta"
+            )
+        }
+
+        item {
+            NextAppointmentCard(
+                appointment = state.nextAppointment,
+                isDoctor = false,
+                onClick = onAppointmentsClick
+            )
+        }
+
+        item {
+            Button(
+                onClick = onNewAppointmentClick,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Add,
+                    contentDescription = null
+                )
+
+                Text(
+                    text = "Reservar nueva cita",
+                    modifier = Modifier.padding(start = 8.dp)
+                )
+            }
+        }
+
+        item {
+            SectionHeader(
+                title = "Accesos rápidos"
+            )
+        }
+
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement =
+                    Arrangement.spacedBy(12.dp)
+            ) {
+                DashboardQuickAction(
+                    title = "Mis citas",
+                    icon = Icons.Outlined.CalendarMonth,
+                    modifier = Modifier.weight(1f),
+                    onClick = onAppointmentsClick
+                )
+
+                DashboardQuickAction(
+                    title = "Calendario",
+                    icon = Icons.Outlined.Schedule,
+                    modifier = Modifier.weight(1f),
+                    onClick = onCalendarClick
                 )
             }
         }
     }
 }
 
-
-/*
- * =====================================================
- * CONTENIDO PRINCIPAL
- * =====================================================
- */
+// =====================================================
+// ADMINISTRADOR
+// =====================================================
 
 @Composable
-private fun HomeContent(
-    uiState: HomeUiState,
+private fun AdminHomeContent(
+    state: HomeUiState,
+    firstName: String,
     onAppointmentsClick: () -> Unit,
     onPatientsClick: () -> Unit,
     onDoctorsClick: () -> Unit,
     onSpecialitiesClick: () -> Unit,
     onNewAppointmentClick: () -> Unit,
-    onCalendarClick: () -> Unit
+    onCalendarClick: () -> Unit,
+    onRefresh: () -> Unit
+) {
+    DashboardList {
+        item {
+            DashboardGreeting(
+                firstName = firstName,
+                description = "Resumen operativo de la clínica.",
+                onRefresh = onRefresh
+            )
+        }
+
+        if (
+            state.unconfirmedAppointments > 0 ||
+            state.doctorsWithoutSchedules > 0
+        ) {
+            item {
+                SectionHeader(
+                    title = "Requiere atención",
+                    subtitle = "Asuntos pendientes de gestión"
+                )
+            }
+
+            if (state.unconfirmedAppointments > 0) {
+                item {
+                    DashboardAlertCard(
+                        title = "Citas por confirmar",
+                        description =
+                            "${state.unconfirmedAppointments} citas requieren revisión.",
+                        onClick = onAppointmentsClick
+                    )
+                }
+            }
+
+            if (state.doctorsWithoutSchedules > 0) {
+                item {
+                    DashboardAlertCard(
+                        title = "Médicos sin horario",
+                        description =
+                            "${state.doctorsWithoutSchedules} médicos no tienen horarios configurados.",
+                        onClick = onDoctorsClick
+                    )
+                }
+            }
+        }
+
+        item {
+            SectionHeader(
+                title = "Resumen operativo",
+                subtitle = "Indicadores generales"
+            )
+        }
+
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement =
+                    Arrangement.spacedBy(12.dp)
+            ) {
+                DashboardMetricCard(
+                    title = "Citas de hoy",
+                    value = state.todayAppointments.toString(),
+                    icon = Icons.Outlined.CalendarMonth,
+                    modifier = Modifier.weight(1f),
+                    onClick = onAppointmentsClick
+                )
+
+                DashboardMetricCard(
+                    title = "Pacientes",
+                    value = state.patients.toString(),
+                    icon = Icons.Outlined.People,
+                    modifier = Modifier.weight(1f),
+                    onClick = onPatientsClick
+                )
+            }
+        }
+
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement =
+                    Arrangement.spacedBy(12.dp)
+            ) {
+                DashboardMetricCard(
+                    title = "Médicos",
+                    value = state.doctors.toString(),
+                    icon = Icons.Outlined.MedicalServices,
+                    modifier = Modifier.weight(1f),
+                    onClick = onDoctorsClick
+                )
+
+                DashboardMetricCard(
+                    title = "Especialidades",
+                    value = state.specialities.toString(),
+                    icon = Icons.Outlined.People,
+                    modifier = Modifier.weight(1f),
+                    onClick = onSpecialitiesClick
+                )
+            }
+        }
+
+        item {
+            SectionHeader(
+                title = "Próxima cita",
+                subtitle = "Siguiente atención programada"
+            )
+        }
+
+        item {
+            NextAppointmentCard(
+                appointment = state.nextAppointment,
+                onClick = onAppointmentsClick
+            )
+        }
+
+        item {
+            SectionHeader(
+                title = "Accesos rápidos"
+            )
+        }
+
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement =
+                    Arrangement.spacedBy(12.dp)
+            ) {
+                DashboardQuickAction(
+                    title = "Nueva cita",
+                    icon = Icons.Outlined.Add,
+                    modifier = Modifier.weight(1f),
+                    onClick = onNewAppointmentClick
+                )
+
+                DashboardQuickAction(
+                    title = "Calendario",
+                    icon = Icons.Outlined.CalendarMonth,
+                    modifier = Modifier.weight(1f),
+                    onClick = onCalendarClick
+                )
+            }
+        }
+
+        item {
+            DashboardActionCard(
+                title = "Gestionar pacientes",
+                description =
+                    "Consultar los pacientes registrados",
+                icon = Icons.Outlined.People,
+                onClick = onPatientsClick
+            )
+        }
+    }
+}
+
+// =====================================================
+// COMPONENTES DEL DASHBOARD
+// =====================================================
+
+@Composable
+private fun DashboardList(
+    content: LazyListScope.() -> Unit
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 32.dp),
-        verticalArrangement = Arrangement.spacedBy(20.dp)
-    ) {
-        item { HomeGreeting(uiState.username) }
-        if (uiState.unconfirmedAppointments > 0 || uiState.doctorsWithoutSchedules > 0) {
-            item {
-                OperationalAlerts(
-                    unconfirmed = uiState.unconfirmedAppointments,
-                    withoutSchedules = uiState.doctorsWithoutSchedules,
-                    onAppointments = onAppointmentsClick,
-                    onDoctors = onDoctorsClick
-                )
-            }
-        }
-        item {
-            Column {
-                SectionTitle("Acciones rápidas")
-                Spacer(Modifier.height(14.dp))
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    CompactQuickAction("Nueva cita", Icons.Outlined.Add, onNewAppointmentClick, Modifier.weight(1f))
-                    CompactQuickAction("Calendario", Icons.Outlined.CalendarMonth, onCalendarClick, Modifier.weight(1f))
-                    CompactQuickAction("Paciente", Icons.Outlined.People, onPatientsClick, Modifier.weight(1f))
-                }
-            }
-        }
-        item {
-            Column {
-                SectionTitle("Agenda de hoy")
-                Spacer(Modifier.height(14.dp))
-                DashboardAgendaCard(uiState.todayAppointments, onAppointmentsClick, onNewAppointmentClick)
-            }
-        }
-        if (uiState.nextAppointment != null) item {
-            Column {
-                SectionTitle("Próxima cita")
-                Spacer(Modifier.height(14.dp))
-                NextAppointmentCard(uiState.nextAppointment, onClick = onAppointmentsClick)
-            }
-        }
-        item {
-            Column {
-                SectionTitle("Resumen operativo")
-                Spacer(Modifier.height(14.dp))
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    SummaryCard("Pendientes", uiState.todayAppointments.toString(), Icons.Outlined.CalendarMonth, onAppointmentsClick, Modifier.weight(1f))
-                    SummaryCard("Pacientes", uiState.patients.toString(), Icons.Outlined.People, onPatientsClick, Modifier.weight(1f))
-                }
-                Spacer(Modifier.height(12.dp))
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    SummaryCard("Médicos", uiState.doctors.toString(), Icons.Outlined.MedicalServices, onDoctorsClick, Modifier.weight(1f))
-                    SummaryCard("Especialidades", uiState.specialities.toString(), Icons.Outlined.LocalHospital, onSpecialitiesClick, Modifier.weight(1f))
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun OperationalAlerts(
-    unconfirmed: Int,
-    withoutSchedules: Int,
-    onAppointments: () -> Unit,
-    onDoctors: () -> Unit
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        SectionTitle("Requiere atención")
-        if (unconfirmed > 0) {
-            AlertCard(
-                "$unconfirmed ${if (unconfirmed == 1) "cita por confirmar" else "citas por confirmar"}",
-                "Revisa la agenda activa para confirmar la atención.",
-                "Ver citas",
-                onAppointments
-            )
-        }
-        if (withoutSchedules > 0) {
-            AlertCard(
-                "$withoutSchedules ${if (withoutSchedules == 1) "médico sin horario" else "médicos sin horario"}",
-                "Configura disponibilidad para habilitar nuevas citas.",
-                "Ver médicos",
-                onDoctors
-            )
-        }
-    }
-}
-
-@Composable
-private fun AlertCard(title: String, description: String, action: String, onClick: () -> Unit) {
-    Card(Modifier.fillMaxWidth().clickable(onClick = onClick), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-            Text(description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSecondaryContainer)
-            Text(action, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
-        }
-    }
-}
-
-@Composable
-private fun CompactQuickAction(title: String, icon: ImageVector, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    Card(modifier.clickable(onClick = onClick), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
-        Column(Modifier.fillMaxWidth().padding(vertical = 14.dp, horizontal = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Icon(icon, null, modifier = Modifier.size(24.dp), tint = MaterialTheme.colorScheme.primary)
-            Spacer(Modifier.height(6.dp))
-            Text(title, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold, maxLines = 1)
-        }
-    }
-}
-
-@Composable
-private fun DashboardAgendaCard(pending: Int, onAgenda: () -> Unit, onNew: () -> Unit) {
-    Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
-        Column(Modifier.fillMaxWidth().padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Surface(Modifier.size(48.dp), CircleShape, color = MaterialTheme.colorScheme.primaryContainer) { Box(contentAlignment = Alignment.Center) { Icon(Icons.Outlined.CalendarMonth, null, tint = MaterialTheme.colorScheme.primary) } }
-            Spacer(Modifier.height(12.dp))
-            Text(if (pending == 0) "Sin citas pendientes" else "$pending citas pendientes", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            Spacer(Modifier.height(4.dp))
-            Text(if (pending == 0) "La agenda del día está libre" else "Revisa y gestiona tus próximas atenciones", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Spacer(Modifier.height(14.dp))
-            if (pending == 0) Button(onClick = onNew) { Icon(Icons.Outlined.Add, null); Text(" Nueva cita") }
-            else Text("Ver agenda", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold, modifier = Modifier.clickable(onClick = onAgenda))
-        }
-    }
-}
-
-@Composable
-private fun LegacyHomeContent(
-    uiState: HomeUiState,
-    onAppointmentsClick: () -> Unit,
-    onPatientsClick: () -> Unit,
-    onDoctorsClick: () -> Unit,
-    onSpecialitiesClick: () -> Unit,
-    onNewAppointmentClick: () -> Unit,
-    onCalendarClick: () -> Unit
-) {
-
-    LazyColumn(
-        modifier =
-            Modifier.fillMaxSize(),
-
-        contentPadding =
-            PaddingValues(
-                start = 16.dp,
-                end = 16.dp,
-                top = 20.dp,
-                bottom = 32.dp
-            ),
-
+        contentPadding = PaddingValues(
+            start = 16.dp,
+            end = 16.dp,
+            top = 20.dp,
+            bottom = 32.dp
+        ),
         verticalArrangement =
-            Arrangement.spacedBy(20.dp)
-    ) {
-
-        /*
-         * =================================================
-         * SALUDO
-         * =================================================
-         */
-        item {
-
-            HomeGreeting(
-                username =
-                    uiState.username
-            )
-        }
-
-        /*
-         * =================================================
-         * RESUMEN
-         * =================================================
-         */
-        item {
-
-            Column {
-
-                SectionTitle(
-                    title =
-                        "Resumen"
-                )
-
-                Spacer(
-                    modifier =
-                        Modifier.height(14.dp)
-                )
-
-                Row(
-                    modifier =
-                        Modifier.fillMaxWidth(),
-
-                    horizontalArrangement =
-                        Arrangement.spacedBy(12.dp)
-                ) {
-
-                    SummaryCard(
-                        title =
-                            "Citas hoy",
-
-                        value =
-                            uiState
-                                .todayAppointments
-                                .toString(),
-
-                        icon =
-                            Icons.Outlined.CalendarMonth,
-
-                        modifier =
-                            Modifier.weight(1f),
-
-                        onClick =
-                            onAppointmentsClick
-                    )
-
-                    SummaryCard(
-                        title =
-                            "Pacientes",
-
-                        value =
-                            uiState
-                                .patients
-                                .toString(),
-
-                        icon =
-                            Icons.Outlined.People,
-
-                        modifier =
-                            Modifier.weight(1f),
-
-                        onClick =
-                            onPatientsClick
-                    )
-                }
-
-                Spacer(
-                    modifier =
-                        Modifier.height(12.dp)
-                )
-
-                Row(
-                    modifier =
-                        Modifier.fillMaxWidth(),
-
-                    horizontalArrangement =
-                        Arrangement.spacedBy(12.dp)
-                ) {
-
-                    SummaryCard(
-                        title =
-                            "Médicos",
-
-                        value =
-                            uiState
-                                .doctors
-                                .toString(),
-
-                        icon =
-                            Icons.Outlined.MedicalServices,
-
-                        modifier =
-                            Modifier.weight(1f),
-
-                        onClick =
-                            onDoctorsClick
-                    )
-
-                    SummaryCard(
-                        title =
-                            "Especialidades",
-
-                        value =
-                            uiState
-                                .specialities
-                                .toString(),
-
-                        icon =
-                            Icons.Outlined.LocalHospital,
-
-                        modifier =
-                            Modifier.weight(1f),
-
-                        onClick =
-                            onSpecialitiesClick
-                    )
-                }
-            }
-        }
-
-        /*
-         * =================================================
-         * AGENDA DE HOY
-         * =================================================
-         */
-        item {
-
-            Column {
-
-                SectionTitle(
-                    title =
-                        "Agenda de hoy"
-                )
-
-                Spacer(
-                    modifier =
-                        Modifier.height(14.dp)
-                )
-
-                TodayAgendaCard(
-                    appointmentCount =
-                        uiState.todayAppointments,
-
-                    onClick =
-                        onAppointmentsClick
-                )
-            }
-        }
-
-        /*
-         * =================================================
-         * PRÓXIMA CITA
-         * =================================================
-         */
-        item {
-
-            Column {
-
-                SectionTitle(
-                    title =
-                        "Próxima cita"
-                )
-
-                Spacer(
-                    modifier =
-                        Modifier.height(14.dp)
-                )
-
-                NextAppointmentCard(
-                    appointment =
-                        uiState.nextAppointment,
-
-                    onClick =
-                        onAppointmentsClick
-                )
-            }
-        }
-
-        /*
-         * =================================================
-         * ACCIONES RÁPIDAS
-         * =================================================
-         */
-        item {
-
-            Column {
-
-                SectionTitle(
-                    title =
-                        "Acciones rápidas"
-                )
-
-                Spacer(
-                    modifier =
-                        Modifier.height(14.dp)
-                )
-
-                QuickActions(
-                    onNewAppointmentClick =
-                        onNewAppointmentClick,
-
-                    onCalendarClick =
-                        onCalendarClick
-                )
-            }
-        }
-    }
-}
-
-
-/*
- * =====================================================
- * SALUDO
- * =====================================================
- */
-
-@Composable
-private fun HomeGreeting(
-    username: String
-) {
-
-    Column {
-
-        Text(
-            text =
-                "Buenos días, $username",
-
-            style =
-                MaterialTheme.typography.headlineSmall,
-
-            fontWeight =
-                FontWeight.Bold,
-
-            color =
-                MaterialTheme.colorScheme.onBackground
-        )
-
-        Spacer(
-            modifier =
-                Modifier.height(4.dp)
-        )
-
-        Text(
-            text =
-                "Tu agenda y tareas operativas para hoy",
-
-            style =
-                MaterialTheme.typography.bodyLarge,
-
-            color =
-                MaterialTheme.colorScheme.onSurfaceVariant
-        )
-    }
-}
-
-
-/*
- * =====================================================
- * TÍTULO DE SECCIÓN
- * =====================================================
- */
-
-@Composable
-private fun SectionTitle(
-    title: String
-) {
-
-    Text(
-        text =
-            title,
-
-        style =
-            MaterialTheme.typography.headlineSmall,
-
-        fontWeight =
-            FontWeight.Bold,
-
-        color =
-            MaterialTheme.colorScheme.onBackground
+            Arrangement.spacedBy(16.dp),
+        content = content
     )
 }
 
+@Composable
+private fun DashboardGreeting(
+    firstName: String,
+    description: String,
+    onRefresh: () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.Top,
+        horizontalArrangement =
+            Arrangement.spacedBy(8.dp)
+    ) {
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement =
+                Arrangement.spacedBy(6.dp)
+        ) {
+            Text(
+                text = "Hola, $firstName",
+                style =
+                    MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                color =
+                    MaterialTheme.colorScheme.onBackground,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
 
-/*
- * =====================================================
- * TARJETA DE RESUMEN
- * =====================================================
- */
+            Text(
+                text = description,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme
+                    .colorScheme.onSurfaceVariant
+            )
+        }
+
+        IconButton(onClick = onRefresh) {
+            Icon(
+                imageVector = Icons.Outlined.Refresh,
+                contentDescription = "Actualizar resumen",
+                tint = MaterialTheme.colorScheme.primary
+            )
+        }
+    }
+}
 
 @Composable
-private fun SummaryCard(
+private fun SectionHeader(
+    title: String,
+    subtitle: String? = null
+) {
+    Column(
+        verticalArrangement =
+            Arrangement.spacedBy(4.dp)
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold
+        )
+
+        if (!subtitle.isNullOrBlank()) {
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme
+                    .colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun DashboardMetricCard(
     title: String,
     value: String,
     icon: ImageVector,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
 ) {
+    val colors = MaterialTheme.colorScheme
 
     Card(
-        modifier =
-            modifier
-                .height(96.dp)
-                .clickable(
-                    onClick = onClick
-                ),
-
-        shape =
-            RoundedCornerShape(18.dp),
-
-        colors =
-            CardDefaults.cardColors(
-                containerColor =
-                    MaterialTheme.colorScheme.surface
-            ),
-
-        elevation =
-            CardDefaults.cardElevation(
-                defaultElevation = 2.dp
-            )
+        onClick = onClick,
+        modifier = modifier,
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = colors.surface
+        ),
+        border = BorderStroke(
+            1.dp,
+            colors.outlineVariant
+        )
     ) {
-
         Column(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(
-                        horizontal = 16.dp,
-                        vertical = 14.dp
-                    ),
-
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
             verticalArrangement =
-                Arrangement.SpaceBetween
+                Arrangement.spacedBy(12.dp)
         ) {
-
-            Row(
-                modifier =
-                    Modifier.fillMaxWidth(),
-
-                horizontalArrangement =
-                    Arrangement.SpaceBetween,
-
-                verticalAlignment =
-                    Alignment.CenterVertically
+            Surface(
+                modifier = Modifier.size(42.dp),
+                shape = RoundedCornerShape(12.dp),
+                color = colors.primaryContainer
             ) {
-
-                Text(
-                    text =
-                        title,
-
-                    style =
-                        MaterialTheme.typography.titleSmall,
-
-                    fontWeight =
-                        FontWeight.SemiBold,
-
-                    color =
-                        MaterialTheme.colorScheme.onSurfaceVariant,
-
-                    maxLines =
-                        1,
-
-                    overflow =
-                        TextOverflow.Ellipsis,
-
-                    modifier =
-                        Modifier.weight(1f)
-                )
-
-                Spacer(
-                    modifier =
-                        Modifier.width(8.dp)
-                )
-
-                Icon(
-                    imageVector =
-                        icon,
-
-                    contentDescription =
-                        null,
-
-                    modifier =
-                        Modifier.size(27.dp),
-
-                    tint =
-                        MaterialTheme.colorScheme.primary
-                )
+                Box(
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = colors.primary,
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
             }
 
             Text(
-                text =
-                    value,
+                text = value,
+                style = MaterialTheme
+                    .typography.headlineMedium,
+                fontWeight = FontWeight.Bold
+            )
 
-                style =
-                    MaterialTheme.typography.headlineMedium,
-
-                fontWeight =
-                    FontWeight.Bold,
-
-                color =
-                    MaterialTheme.colorScheme.onSurface
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodySmall,
+                color = colors.onSurfaceVariant,
+                minLines = 2,
+                maxLines = 2
             )
         }
     }
 }
 
-
-/*
- * =====================================================
- * AGENDA DE HOY
- * =====================================================
- */
-
 @Composable
-private fun TodayAgendaCard(
-    appointmentCount: Int,
+private fun DashboardActionCard(
+    title: String,
+    description: String,
+    icon: ImageVector,
     onClick: () -> Unit
 ) {
+    val colors = MaterialTheme.colorScheme
 
     Card(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .clickable(
-                    onClick = onClick
-                ),
-
-        shape =
-            RoundedCornerShape(20.dp),
-
-        colors =
-            CardDefaults.cardColors(
-                containerColor =
-                    MaterialTheme.colorScheme.surface
-            ),
-
-        elevation =
-            CardDefaults.cardElevation(
-                defaultElevation = 2.dp
-            )
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = colors.surface
+        ),
+        border = BorderStroke(
+            1.dp,
+            colors.outlineVariant
+        )
     ) {
-
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(
-                        horizontal = 20.dp,
-                        vertical = 24.dp
-                    ),
-
-            horizontalAlignment =
-                Alignment.CenterHorizontally
-        ) {
-
-            Surface(
-                modifier =
-                    Modifier.size(52.dp),
-
-                shape =
-                    CircleShape,
-
-                color =
-                    MaterialTheme.colorScheme.primaryContainer
-            ) {
-
-                Box(
-                    contentAlignment =
-                        Alignment.Center
-                ) {
-
-                    Icon(
-                        imageVector =
-                            Icons.Outlined.CalendarMonth,
-
-                        contentDescription =
-                            null,
-
-                        modifier =
-                            Modifier.size(28.dp),
-
-                        tint =
-                            MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
-
-            Spacer(
-                modifier =
-                    Modifier.height(14.dp)
-            )
-
-            if (appointmentCount == 0) {
-
-                Text(
-                    text =
-                        "Sin citas para hoy",
-
-                    style =
-                        MaterialTheme.typography.titleMedium,
-
-                    fontWeight =
-                        FontWeight.Bold
-                )
-
-                Spacer(
-                    modifier =
-                        Modifier.height(4.dp)
-                )
-
-                Text(
-                    text =
-                        "La agenda del día está libre",
-
-                    style =
-                        MaterialTheme.typography.bodyMedium,
-
-                    color =
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-            } else {
-
-                Text(
-                    text =
-                        "$appointmentCount ${
-                            if (appointmentCount == 1) {
-                                "cita programada"
-                            } else {
-                                "citas programadas"
-                            }
-                        }",
-
-                    style =
-                        MaterialTheme.typography.titleMedium,
-
-                    fontWeight =
-                        FontWeight.Bold
-                )
-
-                Spacer(
-                    modifier =
-                        Modifier.height(4.dp)
-                )
-
-                Text(
-                    text =
-                        "Revisa la agenda del día",
-
-                    style =
-                        MaterialTheme.typography.bodyMedium,
-
-                    color =
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-    }
-}
-
-
-/*
- * =====================================================
- * PRÓXIMA CITA
- * =====================================================
- */
-
-@Composable
-private fun NextAppointmentCard(
-    appointment: AppointmentSummary?,
-    onClick: () -> Unit
-) {
-
-    Card(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .clickable(
-                    onClick = onClick
-                ),
-
-        shape =
-            RoundedCornerShape(20.dp),
-
-        colors =
-            CardDefaults.cardColors(
-                containerColor =
-                    MaterialTheme.colorScheme.surface
-            ),
-
-        elevation =
-            CardDefaults.cardElevation(
-                defaultElevation = 2.dp
-            )
-    ) {
-
         Row(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(20.dp),
-
-            verticalAlignment =
-                Alignment.CenterVertically
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement =
+                Arrangement.spacedBy(14.dp)
         ) {
-
             Surface(
-                modifier =
-                    Modifier.size(52.dp),
-
-                shape =
-                    CircleShape,
-
-                color =
-                    MaterialTheme.colorScheme.primaryContainer
+                modifier = Modifier.size(48.dp),
+                shape = RoundedCornerShape(14.dp),
+                color = colors.primaryContainer
             ) {
-
                 Box(
-                    contentAlignment =
-                        Alignment.Center
+                    contentAlignment = Alignment.Center
                 ) {
-
                     Icon(
-                        imageVector =
-                            Icons.Outlined.EventAvailable,
-
-                        contentDescription =
-                            null,
-
-                        modifier =
-                            Modifier.size(27.dp),
-
-                        tint =
-                            MaterialTheme.colorScheme.primary
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = colors.primary,
+                        modifier = Modifier.size(24.dp)
                     )
                 }
             }
 
-            Spacer(
-                modifier =
-                    Modifier.width(16.dp)
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement =
+                    Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    text = title,
+                    style =
+                        MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+
+                Text(
+                    text = description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = colors.onSurfaceVariant
+                )
+            }
+
+            Icon(
+                imageVector = Icons.Outlined.ChevronRight,
+                contentDescription = null,
+                tint = colors.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun DashboardQuickAction(
+    title: String,
+    icon: ImageVector,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    val colors = MaterialTheme.colorScheme
+
+    Card(
+        onClick = onClick,
+        modifier = modifier,
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = colors.surface
+        ),
+        border = BorderStroke(
+            1.dp,
+            colors.outlineVariant
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(
+                    horizontal = 12.dp,
+                    vertical = 18.dp
+                ),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement =
+                Arrangement.spacedBy(10.dp)
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = colors.primary,
+                modifier = Modifier.size(26.dp)
+            )
+
+            Text(
+                text = title,
+                fontWeight = FontWeight.SemiBold,
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+@Composable
+private fun DashboardAlertCard(
+    title: String,
+    description: String,
+    onClick: () -> Unit
+) {
+    val colors = MaterialTheme.colorScheme
+
+    Card(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = colors.errorContainer
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement =
+                Arrangement.spacedBy(12.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.EventAvailable,
+                contentDescription = null,
+                tint = colors.onErrorContainer
             )
 
             Column(
-                modifier =
-                    Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                verticalArrangement =
+                    Arrangement.spacedBy(4.dp)
             ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme
+                        .typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = colors.onErrorContainer
+                )
 
-                if (appointment == null) {
-
-                    Text(
-                        text =
-                            "No hay próximas citas",
-
-                        style =
-                            MaterialTheme.typography.titleMedium,
-
-                        fontWeight =
-                            FontWeight.Bold
-                    )
-
-                    Spacer(
-                        modifier =
-                            Modifier.height(4.dp)
-                    )
-
-                    Text(
-                        text =
-                            "No hay atenciones pendientes registradas.",
-
-                        style =
-                            MaterialTheme.typography.bodyMedium,
-
-                        color =
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                } else {
-
-                    Text(
-                        text =
-                            appointment.time,
-
-                        style =
-                            MaterialTheme.typography.titleMedium,
-
-                        fontWeight =
-                            FontWeight.Bold,
-
-                        color =
-                            MaterialTheme.colorScheme.primary
-                    )
-
-                    Spacer(
-                        modifier =
-                            Modifier.height(4.dp)
-                    )
-
-                    Text(
-                        text =
-                            appointment.patientName,
-
-                        style =
-                            MaterialTheme.typography.bodyLarge,
-
-                        fontWeight =
-                            FontWeight.SemiBold
-                    )
-
-                    Spacer(
-                        modifier =
-                            Modifier.height(2.dp)
-                    )
-
-                    Text(
-                        text =
-                            "${appointment.speciality} · ${appointment.doctorName}",
-
-                        style =
-                            MaterialTheme.typography.bodyMedium,
-
-                        color =
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-        }
-    }
-}
-
-
-/*
- * =====================================================
- * ACCIONES RÁPIDAS
- * =====================================================
- */
-
-@Composable
-private fun QuickActions(
-    onNewAppointmentClick: () -> Unit,
-    onCalendarClick: () -> Unit
-) {
-
-    Row(
-        modifier =
-            Modifier.fillMaxWidth(),
-
-        horizontalArrangement =
-            Arrangement.spacedBy(12.dp)
-    ) {
-
-        QuickActionCard(
-            title =
-                "Nueva cita",
-
-            subtitle =
-                "Registrar atención",
-
-            icon =
-                Icons.Outlined.Add,
-
-            onClick =
-                onNewAppointmentClick,
-
-            modifier =
-                Modifier.weight(1f)
-        )
-
-        QuickActionCard(
-            title =
-                "Agenda",
-
-            subtitle =
-                "Ver horarios",
-
-            icon =
-                Icons.Outlined.Schedule,
-
-            onClick =
-                onCalendarClick,
-
-            modifier =
-                Modifier.weight(1f)
-        )
-    }
-}
-
-
-/*
- * =====================================================
- * ACCIÓN RÁPIDA
- * =====================================================
- */
-
-@Composable
-private fun QuickActionCard(
-    title: String,
-    subtitle: String,
-    icon: ImageVector,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-
-    Card(
-        modifier =
-            modifier.clickable(
-                onClick = onClick
-            ),
-
-        shape =
-            RoundedCornerShape(18.dp),
-
-        colors =
-            CardDefaults.cardColors(
-                containerColor =
-                    MaterialTheme.colorScheme.surface
-            ),
-
-        border =
-            BorderStroke(
-                width = 1.dp,
-
-                color =
-                    MaterialTheme.colorScheme.outlineVariant
-            ),
-
-        elevation =
-            CardDefaults.cardElevation(
-                defaultElevation = 0.dp
-            )
-    ) {
-
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
-        ) {
-
-            Surface(
-                modifier =
-                    Modifier.size(42.dp),
-
-                shape =
-                    CircleShape,
-
-                color =
-                    MaterialTheme.colorScheme.primaryContainer
-            ) {
-
-                Box(
-                    contentAlignment =
-                        Alignment.Center
-                ) {
-
-                    Icon(
-                        imageVector =
-                            icon,
-
-                        contentDescription =
-                            null,
-
-                        modifier =
-                            Modifier.size(22.dp),
-
-                        tint =
-                            MaterialTheme.colorScheme.primary
-                    )
-                }
+                Text(
+                    text = description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = colors.onErrorContainer
+                )
             }
 
-            Spacer(
-                modifier =
-                    Modifier.height(12.dp)
-            )
-
-            Text(
-                text =
-                    title,
-
-                style =
-                    MaterialTheme.typography.titleSmall,
-
-                fontWeight =
-                    FontWeight.SemiBold
-            )
-
-            Spacer(
-                modifier =
-                    Modifier.height(2.dp)
-            )
-
-            Text(
-                text =
-                    subtitle,
-
-                style =
-                    MaterialTheme.typography.bodySmall,
-
-                color =
-                    MaterialTheme.colorScheme.onSurfaceVariant
+            Icon(
+                imageVector = Icons.Outlined.ChevronRight,
+                contentDescription = null,
+                tint = colors.onErrorContainer
             )
         }
     }
 }
 
-
-/*
- * =====================================================
- * ERROR
- * =====================================================
- */
-
 @Composable
-private fun HomeError(
+private fun DashboardError(
     message: String,
     onRetry: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-
     Column(
-        modifier =
-            modifier.padding(24.dp),
-
-        horizontalAlignment =
-            Alignment.CenterHorizontally
+        modifier = modifier.padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement =
+            Arrangement.spacedBy(12.dp)
     ) {
-
         Text(
-            text =
-                "No se pudo cargar el resumen",
-
-            style =
-                MaterialTheme.typography.titleMedium,
-
-            fontWeight =
-                FontWeight.Bold
-        )
-
-        Spacer(
-            modifier =
-                Modifier.height(8.dp)
+            text = "No se pudo cargar el inicio",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold
         )
 
         Text(
-            text =
-                message,
-
-            style =
-                MaterialTheme.typography.bodyMedium,
-
+            text = message,
+            style = MaterialTheme.typography.bodyMedium,
             color =
                 MaterialTheme.colorScheme.onSurfaceVariant
         )
 
-        Spacer(
-            modifier =
-                Modifier.height(16.dp)
-        )
-
-        Text(
-            text =
-                "Reintentar",
-
-            color =
-                MaterialTheme.colorScheme.primary,
-
-            fontWeight =
-                FontWeight.SemiBold,
-
-            modifier =
-                Modifier.clickable(
-                    onClick = onRetry
-                )
-        )
+        OutlinedButton(
+            onClick = onRetry
+        ) {
+            Text("Reintentar")
+        }
     }
 }

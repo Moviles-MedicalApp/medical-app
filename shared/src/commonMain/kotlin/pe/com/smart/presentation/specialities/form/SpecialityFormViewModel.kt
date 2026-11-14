@@ -181,6 +181,24 @@ class SpecialityFormViewModel(
         }
     }
 
+
+    /**
+     * Reintenta recuperar la especialidad
+     * cuando falla la carga inicial.
+     */
+    fun retryLoad() {
+        val id = specialityId ?: return
+
+        if (_uiState.value.isLoading ||
+            _uiState.value.isSaving
+        ) {
+            return
+        }
+
+        loadSpeciality(id)
+    }
+
+
     private fun validate(): Boolean {
         val state = _uiState.value
 

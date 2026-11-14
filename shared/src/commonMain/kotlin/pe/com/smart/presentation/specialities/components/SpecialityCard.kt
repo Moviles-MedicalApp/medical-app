@@ -1,18 +1,18 @@
+
 package pe.com.smart.presentation.specialities.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.MedicalServices
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -28,157 +28,119 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import pe.com.smart.domain.model.Speciality
 
+/**
+ * Tarjeta de especialidad médica.
+ */
 @Composable
 fun SpecialityCard(
     speciality: Speciality,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val colors = MaterialTheme.colorScheme
+    val isActive = !speciality.deleted
 
     Card(
-        modifier =
-            modifier
-                .fillMaxWidth()
-                .clickable(
-                    onClick = onClick
-                ),
-
-        shape =
-            RoundedCornerShape(
-                18.dp
-            ),
-
-        colors =
-            CardDefaults.cardColors(
-                containerColor =
-                    MaterialTheme.colorScheme.surface
-            ),
-
-        elevation =
-            CardDefaults.cardElevation(
-                defaultElevation =
-                    2.dp
-            )
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(18.dp),
+        border = BorderStroke(
+            1.dp,
+            colors.outlineVariant
+        ),
+        colors = CardDefaults.cardColors(
+            containerColor = colors.surface
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 0.dp
+        )
     ) {
-
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(
-                        horizontal = 16.dp,
-                        vertical = 16.dp
-                    ),
-
-            verticalArrangement =
-                Arrangement.spacedBy(
-                    12.dp
-                )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement =
+                Arrangement.spacedBy(12.dp)
         ) {
-
-            Row(
-                modifier =
-                    Modifier.fillMaxWidth(),
-
-                verticalAlignment =
-                    Alignment.CenterVertically
+            Surface(
+                modifier = Modifier.size(52.dp),
+                shape = RoundedCornerShape(15.dp),
+                color = colors.primaryContainer
             ) {
-
-                Surface(
-                    modifier =
-                        Modifier.size(
-                            48.dp
-                        ),
-
-                    shape =
-                        CircleShape,
-
-                    color =
-                        MaterialTheme.colorScheme.primaryContainer
+                Box(
+                    contentAlignment = Alignment.Center
                 ) {
-
-                    Box(
-                        contentAlignment =
-                            Alignment.Center
-                    ) {
-
-                        Icon(
-                            imageVector =
-                                Icons.Outlined.MedicalServices,
-
-                            contentDescription =
-                                null,
-
-                            modifier =
-                                Modifier.size(
-                                    24.dp
-                                ),
-
-                            tint =
-                                MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
-
-                Spacer(
-                    modifier =
-                        Modifier.width(
-                            14.dp
-                        )
-                )
-
-                Column(
-                    modifier =
-                        Modifier.weight(
-                            1f
-                        ),
-
-                    verticalArrangement =
-                        Arrangement.spacedBy(
-                            2.dp
-                        )
-                ) {
-
-                    Text(
-                        text =
-                            speciality.name,
-
-                        style =
-                            MaterialTheme.typography.titleMedium,
-
-                        fontWeight =
-                            FontWeight.Bold,
-
-                        maxLines =
-                            1,
-
-                        overflow =
-                            TextOverflow.Ellipsis,
-
-                        color =
-                            MaterialTheme.colorScheme.onSurface
+                    Icon(
+                        imageVector =
+                            Icons.Outlined.MedicalServices,
+                        contentDescription = null,
+                        modifier = Modifier.size(26.dp),
+                        tint = colors.primary
                     )
-
-                    if (speciality.description.isNotBlank()) {
-                        Text(
-                            text =
-                                speciality.description,
-
-                            style =
-                                MaterialTheme.typography.bodyMedium,
-
-                            maxLines =
-                                2,
-
-                            overflow =
-                                TextOverflow.Ellipsis,
-
-                            color =
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
                 }
             }
+
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement =
+                    Arrangement.spacedBy(7.dp)
+            ) {
+                Text(
+                    text = speciality.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = colors.onSurface,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                if (speciality.description.isNotBlank()) {
+                    Text(
+                        text = speciality.description,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = colors.onSurfaceVariant,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = if (isActive) {
+                        colors.primaryContainer
+                    } else {
+                        colors.errorContainer
+                    }
+                ) {
+                    Text(
+                        text = if (isActive) {
+                            "Activa"
+                        } else {
+                            "Inactiva"
+                        },
+                        modifier = Modifier.padding(
+                            horizontal = 9.dp,
+                            vertical = 5.dp
+                        ),
+                        style = MaterialTheme
+                            .typography.labelSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (isActive) {
+                            colors.onPrimaryContainer
+                        } else {
+                            colors.onErrorContainer
+                        }
+                    )
+                }
+            }
+
+            Icon(
+                imageVector = Icons.Outlined.ChevronRight,
+                contentDescription = null,
+                tint = colors.onSurfaceVariant
+            )
         }
     }
 }

@@ -27,6 +27,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -46,6 +47,7 @@ import pe.com.smart.presentation.login.components.PasswordTextField
 @Composable
 fun LoginScreen(
     onLoginSuccess: () -> Unit,
+    onRegister: () -> Unit = {},
     message: String? = null,
     onConsultAppointments: () -> Unit = {},
     modifier: Modifier = Modifier,
@@ -429,6 +431,29 @@ fun LoginScreen(
                                     )
                                 }
                             }
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "¿Aún no tienes una cuenta? ",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = "Regístrate",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.clickable(enabled = !uiState.isLoading) {
+                                    onRegister()
+                                }
+                            )
                         }
 
                         Spacer(

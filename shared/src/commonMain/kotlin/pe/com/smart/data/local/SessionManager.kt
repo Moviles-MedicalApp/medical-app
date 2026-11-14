@@ -16,7 +16,7 @@ object SessionManager {
 
     fun notifySessionExpired() {
 
-        TokenStorage.clearToken()
+        TokenStorage.clearTokens()
 
         _sessionExpired.tryEmit(Unit)
     }

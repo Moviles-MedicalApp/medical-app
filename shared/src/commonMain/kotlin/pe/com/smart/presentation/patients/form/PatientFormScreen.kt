@@ -1,3 +1,4 @@
+
 package pe.com.smart.presentation.patients.form
 
 import androidx.compose.foundation.layout.Box
@@ -18,9 +19,19 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import pe.com.smart.core.ui.AppConfirmDialog
+import pe.com.smart.core.ui.AppError
 import pe.com.smart.core.ui.AppLoading
 import pe.com.smart.presentation.patients.components.PatientForm
 
+/**
+ * Pantalla de registro y edición de pacientes.
+ *
+ * Controla:
+ * - Estado del ViewModel.
+ * - Carga de información.
+ * - Confirmación de salida.
+ * - Guardado de paciente.
+ */
 @Composable
 fun PatientFormScreen(
     patientId: Int?,
@@ -29,242 +40,145 @@ fun PatientFormScreen(
     backRequestKey: Int = 0,
     modifier: Modifier = Modifier
 ) {
+    // =====================================================
+    // VIEWMODEL
+    // =====================================================
 
-    /*
-     * =====================================================
-     * VIEWMODEL
-     * =====================================================
-     */
-
-    val viewModel: PatientFormViewModel =
-        viewModel(
-            key =
-                if (patientId == null) {
-
-                    "patient_create"
-
-                } else {
-
-                    "patient_edit_$patientId"
-                }
-        ) {
-
-            PatientFormViewModel(
-                patientId = patientId
-            )
+    val viewModel: PatientFormViewModel = viewModel(
+        key = if (patientId == null) {
+            "patient_create"
+        } else {
+            "patient_edit_$patientId"
         }
+    ) {
+        PatientFormViewModel(
+            patientId = patientId
+        )
+    }
 
-    /*
-     * =====================================================
-     * ESTADO
-     * =====================================================
-     */
+    // =====================================================
+    // UI STATE
+    // =====================================================
 
-    val uiState by
-    viewModel.uiState
+    val uiState by viewModel.uiState
         .collectAsStateWithLifecycle()
 
-    /*
-     * Control del diálogo para
-     * descartar cambios.
-     */
-    var showDiscardDialog by
-    remember {
+    var showDiscardDialog by remember(patientId) {
         mutableStateOf(false)
     }
 
-    /*
-     * =====================================================
-     * SOLICITUD DE VOLVER
-     * =====================================================
-     *
-     * AppNavigation incrementa backRequestKey
-     * cuando el usuario pulsa la flecha atrás.
-     *
-     * Aquí decidimos:
-     *
-     * - sin cambios -> volver directamente
-     * - con cambios -> pedir confirmación
-     */
+    // =====================================================
+    // BACK NAVIGATION
+    // =====================================================
 
-    LaunchedEffect(
-        backRequestKey
-    ) {
-
-        /*
-         * 0 es el estado inicial.
-         * No hacemos nada.
-         */
+    LaunchedEffect(backRequestKey) {
         if (backRequestKey == 0) {
             return@LaunchedEffect
         }
 
-        /*
-         * No permitimos salir mientras
-         * se está guardando.
-         */
-        if (uiState.isSaving) {
+        if (uiState.isSaving || uiState.isLoading) {
             return@LaunchedEffect
         }
 
         if (uiState.hasChanges) {
-
-            showDiscardDialog =
-                true
-
+            showDiscardDialog = true
         } else {
-
             onBackConfirmed()
         }
     }
 
-    /*
-     * =====================================================
-     * CONTENIDO
-     * =====================================================
-     */
+    // =====================================================
+    // CONTENT
+    // =====================================================
 
     Box(
-        modifier =
-            modifier.fillMaxSize()
+        modifier = modifier.fillMaxSize()
     ) {
-
-        /*
-         * =================================================
-         * LOADING
-         * =================================================
-         */
-
-        if (uiState.isLoading) {
-
-            AppLoading(
-                message =
-                    "Cargando paciente..."
-            )
-
-        } else {
-
-            /*
-             * =================================================
-             * FORMULARIO
-             * =================================================
-             */
-
-            PatientForm(
-                state =
-                    uiState,
-
-                /*
-                 * Permite que PatientForm sepa
-                 * si está creando o editando.
-                 */
-                isEditing =
-                    viewModel.isEditing,
-
-                onNameChange =
-                    viewModel::onNameChange,
-
-                onLastNameChange =
-                    viewModel::onLastNameChange,
-
-                onDniChange =
-                    viewModel::onDniChange,
-
-                onEmailChange =
-                    viewModel::onEmailChange,
-
-                onPhoneChange =
-                    viewModel::onPhoneChange,
-
-                onSave = {
-
-                    viewModel.savePatient(
-                        onSuccess =
-                            onSaved
-                    )
-                },
-
-                buttonText =
-                    if (viewModel.isEditing) {
-
-                        "Guardar cambios"
-
+        when {
+            uiState.isLoading -> {
+                AppLoading(
+                    message = if (viewModel.isEditing) {
+                        "Cargando información del paciente..."
                     } else {
+                        "Preparando formulario..."
+                    }
+                )
+            }
 
+            uiState.error != null && viewModel.isEditing -> {
+                AppError(
+                    message = uiState.error
+                        ?: "No se pudo cargar el paciente.",
+                    onRetry = {
+                        // El ViewModel carga el paciente
+                        // durante su inicialización.
+                        // Para reintentar desde esta pantalla,
+                        // debe exponerse un método público
+                        // de recarga en el ViewModel.
+                    }
+                )
+            }
+
+            else -> {
+                PatientForm(
+                    state = uiState,
+                    isEditing = viewModel.isEditing,
+
+                    onNameChange = viewModel::onNameChange,
+                    onLastNameChange =
+                        viewModel::onLastNameChange,
+                    onDniChange = viewModel::onDniChange,
+                    onEmailChange = viewModel::onEmailChange,
+                    onPhoneChange = viewModel::onPhoneChange,
+
+                    onSave = {
+                        viewModel.savePatient(
+                            onSuccess = onSaved
+                        )
+                    },
+
+                    buttonText = if (viewModel.isEditing) {
+                        "Guardar cambios"
+                    } else {
                         "Registrar paciente"
                     },
 
-                modifier =
-                    Modifier
+                    modifier = Modifier
                         .fillMaxSize()
-                        .verticalScroll(
-                            rememberScrollState()
-                        )
+                        .verticalScroll(rememberScrollState())
                         .padding(
-                            20.dp
+                            horizontal = 16.dp,
+                            vertical = 20.dp
                         )
-            )
+                )
+            }
         }
     }
 
-    /*
-     * =====================================================
-     * DESCARTAR CAMBIOS
-     * =====================================================
-     */
+    // =====================================================
+    // DISCARD CHANGES
+    // =====================================================
 
     AppConfirmDialog(
-        visible =
-            showDiscardDialog,
-
-        title =
-            "Descartar cambios",
-
-        message =
-            if (viewModel.isEditing) {
-
-                "Tienes cambios sin guardar. ¿Deseas salir sin guardar las modificaciones?"
-
-            } else {
-
-                "Has ingresado información del paciente. ¿Deseas salir sin guardar?"
-            },
-
-        confirmText =
-            "Descartar",
-
-        cancelText =
-            "Seguir editando",
-
-        loadingText =
-            "Saliendo...",
-
-        icon =
-            Icons.Outlined.WarningAmber,
-
-        /*
-         * Descartar cambios implica pérdida
-         * de información, por eso utilizamos
-         * estilo destructivo.
-         */
-        destructive =
-            true,
-
-        isLoading =
-            false,
-
+        visible = showDiscardDialog,
+        title = "Descartar cambios",
+        message = if (viewModel.isEditing) {
+            "Tienes modificaciones sin guardar. ¿Deseas salir sin guardar los cambios?"
+        } else {
+            "Has ingresado información del paciente. ¿Deseas salir sin guardar?"
+        },
+        confirmText = "Descartar",
+        cancelText = "Continuar editando",
+        loadingText = "Saliendo...",
+        icon = Icons.Outlined.WarningAmber,
+        destructive = true,
+        isLoading = false,
         onConfirm = {
-
-            showDiscardDialog =
-                false
-
+            showDiscardDialog = false
             onBackConfirmed()
         },
-
         onDismiss = {
-
-            showDiscardDialog =
-                false
+            showDiscardDialog = false
         }
     )
 }

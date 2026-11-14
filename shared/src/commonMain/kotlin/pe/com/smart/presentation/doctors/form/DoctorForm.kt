@@ -1,20 +1,26 @@
+
 package pe.com.smart.presentation.doctors.form
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Email
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.MedicalServices
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Phone
 import androidx.compose.material.icons.outlined.Save
 import androidx.compose.material3.Button
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -26,18 +32,36 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import pe.com.smart.domain.model.Speciality
 
-@Composable
+/**
+ * Formulario reutilizable de médicos.
+ *
+ * Responsabilidad:
+ * - Presentar los campos.
+ * - Mostrar validaciones.
+ * - Permitir seleccionar especialidad.
+ * - Mostrar el estado de guardado.
+ *
+ * La lógica de negocio permanece
+ * en DoctorFormViewModel.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
+@Composable
 fun DoctorForm(
     state: DoctorFormUiState,
     specialities: List<Speciality>,
@@ -51,125 +75,154 @@ fun DoctorForm(
     buttonText: String,
     modifier: Modifier = Modifier
 ) {
-    var expanded by remember { mutableStateOf(false) }
+    val colors = MaterialTheme.colorScheme
 
-    Column (
+    var specialityExpanded by remember {
+        mutableStateOf(false)
+    }
+
+    val canSave = !state.isLoading &&
+            !state.isSaving &&
+            (!isEditing || state.hasChanges)
+
+    Column(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(20.dp)
+        verticalArrangement =
+            Arrangement.spacedBy(18.dp)
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+
+        // =================================================
+        // ENCABEZADO
+        // =================================================
+
+        Column(
+            verticalArrangement =
+                Arrangement.spacedBy(6.dp)
+        ) {
             Text(
-                text = if (isEditing) "Actualizar médico" else "Nuevo médico",
+                text = if (isEditing) {
+                    "Editar médico"
+                } else {
+                    "Registrar médico"
+                },
                 style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                color = colors.onBackground
             )
+
             Text(
-                text = "Completa los datos profesionales.",
+                text = if (isEditing) {
+                    "Actualiza la información personal y profesional del médico."
+                } else {
+                    "Completa los datos necesarios para registrar un nuevo profesional médico."
+                },
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = colors.onSurfaceVariant
             )
         }
 
-        Card (
-            modifier = Modifier.fillMaxWidth(),
-            shape = MaterialTheme.shapes.extraLarge,
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface
-            )
+        // =================================================
+        // DATOS PERSONALES
+        // =================================================
+
+        DoctorFormSection(
+            title = "Datos personales",
+            subtitle = "Información de identificación",
+            icon = Icons.Outlined.Person
         ) {
+
+            DoctorFormTextField(
+                value = state.name,
+                onValueChange = onNameChange,
+                label = "Nombres",
+                placeholder = "Ingresa los nombres",
+                icon = Icons.Outlined.Person,
+                error = state.nameError,
+                enabled = !state.isSaving,
+                keyboardOptions = KeyboardOptions(
+                    capitalization =
+                        KeyboardCapitalization.Words
+                )
+            )
+
+            DoctorFormTextField(
+                value = state.lastName,
+                onValueChange = onLastNameChange,
+                label = "Apellidos",
+                placeholder = "Ingresa los apellidos",
+                icon = Icons.Outlined.Person,
+                error = state.lastNameError,
+                enabled = !state.isSaving,
+                keyboardOptions = KeyboardOptions(
+                    capitalization =
+                        KeyboardCapitalization.Words
+                )
+            )
+        }
+
+        // =================================================
+        // DATOS PROFESIONALES
+        // =================================================
+
+        DoctorFormSection(
+            title = "Información profesional",
+            subtitle = "Datos de contacto y especialidad",
+            icon = Icons.Outlined.MedicalServices
+        ) {
+
+            DoctorFormTextField(
+                value = state.email,
+                onValueChange = onEmailChange,
+                label = "Correo electrónico",
+                placeholder = "medico@clinica.com",
+                icon = Icons.Outlined.Email,
+                error = state.emailError,
+                enabled = !state.isSaving,
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Email
+                )
+            )
+
+            DoctorFormTextField(
+                value = state.phone,
+                onValueChange = onPhoneChange,
+                label = "Número de celular",
+                placeholder = "9 dígitos",
+                icon = Icons.Outlined.Phone,
+                error = state.phoneError,
+                enabled = !state.isSaving,
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Phone
+                ),
+                supportingMessage =
+                    "${state.phone.length}/9 dígitos"
+            )
+
+            // =============================================
+            // SELECTOR DE ESPECIALIDAD
+            // =============================================
+
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement =
+                    Arrangement.spacedBy(5.dp)
             ) {
                 Text(
-                    text = "Datos personales",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-                HorizontalDivider()
-
-                OutlinedTextField(
-                    value = state.name,
-                    onValueChange = onNameChange,
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Nombre") },
-                    placeholder = { Text("Ej. Juan") },
-                    leadingIcon = {
-                        Icon(Icons.Outlined.Person, contentDescription = null)
-                    },
-                    singleLine = true,
-                    isError = state.nameError != null,
-                    supportingText = {
-                        state.nameError?.let { Text(it) }
-                    }
-                )
-
-                OutlinedTextField(
-                    value = state.lastName,
-                    onValueChange = onLastNameChange,
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Apellidos") },
-                    placeholder = { Text("Ej. Pérez Rojas") },
-                    leadingIcon = {
-                        Icon(Icons.Outlined.Person, contentDescription = null)
-                    },
-                    singleLine = true,
-                    isError = state.lastNameError != null,
-                    supportingText = {
-                        state.lastNameError?.let { Text(it) }
-                    }
-                )
-
-                Text(
-                    text = "Contacto y especialidad",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-                HorizontalDivider()
-
-                OutlinedTextField(
-                    value = state.email,
-                    onValueChange = onEmailChange,
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Correo electrónico") },
-                    placeholder = { Text("medico@clinica.com") },
-                    leadingIcon = {
-                        Icon(Icons.Outlined.Email, contentDescription = null)
-                    },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Email
-                    ),
-                    isError = state.emailError != null,
-                    supportingText = {
-                        state.emailError?.let { Text(it) }
-                    }
-                )
-
-                OutlinedTextField(
-                    value = state.phone,
-                    onValueChange = onPhoneChange,
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Teléfono") },
-                    placeholder = { Text("987654321") },
-                    leadingIcon = {
-                        Icon(Icons.Outlined.Phone, contentDescription = null)
-                    },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Phone
-                    ),
-                    isError = state.phoneError != null,
-                    supportingText = {
-                        Text(state.phoneError ?: "9 dígitos.")
-                    }
+                    text = "Especialidad médica",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Medium,
+                    color = colors.onSurface
                 )
 
                 ExposedDropdownMenuBox(
-                    expanded = expanded,
-                    onExpandedChange = { expanded = it },
+                    expanded = specialityExpanded,
+                    onExpandedChange = { expanded ->
+                        if (
+                            !state.isSaving &&
+                            specialities.isNotEmpty()
+                        ) {
+                            specialityExpanded = expanded
+                        }
+                    },
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     OutlinedTextField(
@@ -179,72 +232,291 @@ fun DoctorForm(
                             .fillMaxWidth()
                             .menuAnchor(),
                         readOnly = true,
-                        enabled = specialities.isNotEmpty(),
-                        label = { Text("Especialidad") },
-                        placeholder = { Text("Selecciona una especialidad") },
+                        enabled = !state.isSaving &&
+                                specialities.isNotEmpty(),
+                        label = {
+                            Text("Seleccionar especialidad")
+                        },
+                        placeholder = {
+                            Text("Selecciona una especialidad")
+                        },
                         leadingIcon = {
                             Icon(
-                                Icons.Outlined.MedicalServices,
+                                imageVector =
+                                    Icons.Outlined.MedicalServices,
                                 contentDescription = null
                             )
                         },
                         trailingIcon = {
-                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+                            ExposedDropdownMenuDefaults.TrailingIcon(
+                                expanded = specialityExpanded
+                            )
                         },
-                        isError = state.specialityError != null,
+                        isError =
+                            state.specialityError != null,
                         supportingText = {
-                            val message = state.specialityError
-                                ?: if (specialities.isEmpty()) {
-                                    "No hay especialidades disponibles."
-                                } else {
-                                    null
-                                }
-                            message?.let { Text(it) }
-                        }
+                            val message =
+                                state.specialityError
+                                    ?: if (
+                                        specialities.isEmpty()
+                                    ) {
+                                        "No hay especialidades disponibles."
+                                    } else {
+                                        "Selecciona la especialidad correspondiente."
+                                    }
+
+                            Text(message)
+                        },
+                        shape = RoundedCornerShape(14.dp)
                     )
 
                     ExposedDropdownMenu(
-                        expanded = expanded,
-                        onDismissRequest = { expanded = false }
+                        expanded = specialityExpanded,
+                        onDismissRequest = {
+                            specialityExpanded = false
+                        }
                     ) {
                         specialities.forEach { speciality ->
                             DropdownMenuItem(
-                                text = { Text(speciality.name) },
+                                text = {
+                                    Text(speciality.name)
+                                },
                                 onClick = {
                                     onSpecialityChange(speciality)
-                                    expanded = false
+                                    specialityExpanded = false
                                 }
                             )
                         }
                     }
                 }
+            }
+        }
 
-                Button(
-                    onClick = onSave,
-                    enabled = !state.isSaving &&
-                            (!isEditing || state.hasChanges),
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = MaterialTheme.shapes.extraLarge
+        // =================================================
+        // NOTA INFORMATIVA
+        // =================================================
+
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(14.dp),
+            color = colors.primaryContainer
+        ) {
+            Row(
+                modifier = Modifier.padding(14.dp),
+                verticalAlignment = Alignment.Top,
+                horizontalArrangement =
+                    Arrangement.spacedBy(10.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Info,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                    tint = colors.primary
+                )
+
+                Text(
+                    text = "Verifica los datos y la especialidad seleccionada antes de guardar el registro.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = colors.onPrimaryContainer
+                )
+            }
+        }
+
+        // =================================================
+        // BOTÓN PRINCIPAL
+        // =================================================
+
+        Button(
+            onClick = onSave,
+            enabled = canSave,
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(14.dp),
+            contentPadding = androidx.compose.foundation.layout
+                .PaddingValues(
+                    horizontal = 20.dp,
+                    vertical = 14.dp
+                )
+        ) {
+            if (state.isSaving) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(19.dp),
+                    strokeWidth = 2.dp,
+                    color = colors.onPrimary
+                )
+            } else {
+                Icon(
+                    imageVector = Icons.Outlined.Save,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+
+            Spacer(Modifier.width(10.dp))
+
+            Text(
+                text = if (state.isSaving) {
+                    "Guardando..."
+                } else {
+                    buttonText
+                },
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
+
+        if (
+            isEditing &&
+            !state.hasChanges &&
+            !state.isSaving
+        ) {
+            Text(
+                text = "No hay modificaciones pendientes.",
+                modifier = Modifier.fillMaxWidth(),
+                style = MaterialTheme.typography.bodySmall,
+                color = colors.onSurfaceVariant
+            )
+        }
+
+        Spacer(
+            modifier = Modifier.size(4.dp)
+        )
+    }
+}
+
+/**
+ * Tarjeta para agrupar campos relacionados.
+ */
+@Composable
+private fun DoctorFormSection(
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    content: @Composable () -> Unit
+) {
+    val colors = MaterialTheme.colorScheme
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = colors.surface
+        ),
+        border = BorderStroke(
+            width = 1.dp,
+            color = colors.outlineVariant
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 0.dp
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement =
+                Arrangement.spacedBy(14.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement =
+                    Arrangement.spacedBy(12.dp)
+            ) {
+                Surface(
+                    modifier = Modifier.size(44.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    color = colors.primaryContainer
                 ) {
-                    if (state.isSaving) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(18.dp),
-                            strokeWidth = 2.dp,
-                            color = MaterialTheme.colorScheme.onPrimary
+                    Box(
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = null,
+                            modifier = Modifier.size(23.dp),
+                            tint = colors.primary
                         )
-                    } else {
-                        Icon(Icons.Outlined.Save, contentDescription = null)
                     }
+                }
+
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement =
+                        Arrangement.spacedBy(3.dp)
+                ) {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = colors.onSurface
+                    )
 
                     Text(
-                        text = if (state.isSaving) {
-                            " Guardando..."
-                        } else {
-                            " $buttonText"
-                        }
+                        text = subtitle,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = colors.onSurfaceVariant
                     )
                 }
             }
+
+            HorizontalDivider(
+                color = colors.outlineVariant
+            )
+
+            content()
         }
     }
+}
+
+/**
+ * Campo de texto con validación visual.
+ */
+@Composable
+private fun DoctorFormTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    placeholder: String,
+    icon: ImageVector,
+    error: String?,
+    enabled: Boolean,
+    keyboardOptions: KeyboardOptions,
+    supportingMessage: String? = null
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        modifier = Modifier.fillMaxWidth(),
+        enabled = enabled,
+        label = {
+            Text(label)
+        },
+        placeholder = {
+            Text(placeholder)
+        },
+        leadingIcon = {
+            Icon(
+                imageVector = icon,
+                contentDescription = null
+            )
+        },
+        singleLine = true,
+        keyboardOptions = keyboardOptions,
+        isError = error != null,
+        supportingText =
+            if (error != null || supportingMessage != null) {
+                {
+                    Text(
+                        text = error
+                            ?: supportingMessage.orEmpty(),
+                        color = if (error != null) {
+                            MaterialTheme.colorScheme.error
+                        } else {
+                            MaterialTheme.colorScheme
+                                .onSurfaceVariant
+                        }
+                    )
+                }
+            } else {
+                null
+            },
+        shape = RoundedCornerShape(14.dp)
+    )
 }

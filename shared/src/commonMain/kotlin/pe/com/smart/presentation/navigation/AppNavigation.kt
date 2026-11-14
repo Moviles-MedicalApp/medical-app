@@ -36,13 +36,19 @@ import pe.com.smart.core.ui.message.UiMessage
 import pe.com.smart.core.ui.message.UiMessageManager
 import pe.com.smart.data.local.SessionManager
 import pe.com.smart.data.local.TokenStorage
+import pe.com.smart.data.local.AccessTokenClaimsDecoder
+import pe.com.smart.data.remote.ApiProvider
+import pe.com.smart.data.repository.AuthRepository
 import pe.com.smart.presentation.appointments.AppointmentsScreen
 import pe.com.smart.presentation.appointments.AppointmentCalendarScreen
+import pe.com.smart.presentation.appointments.DoctorAgendaScreen
+import pe.com.smart.presentation.appointments.PatientAppointmentsScreen
 import pe.com.smart.presentation.doctors.DoctorsScreen
 import pe.com.smart.presentation.doctors.detail.DoctorDetailScreen
 import pe.com.smart.presentation.doctors.form.DoctorFormScreen
 import pe.com.smart.presentation.home.HomeScreen
 import pe.com.smart.presentation.login.LoginScreen
+import pe.com.smart.presentation.login.RegistrationScreen
 import pe.com.smart.presentation.patients.PatientsScreen
 import pe.com.smart.presentation.patients.detail.PatientDetailScreen
 import pe.com.smart.presentation.patients.form.PatientFormScreen
@@ -52,6 +58,8 @@ import pe.com.smart.presentation.specialities.SpecialitiesScreen
 import pe.com.smart.presentation.specialities.detail.SpecialityDetailScreen
 import pe.com.smart.presentation.specialities.form.SpecialityFormScreen
 import pe.com.smart.presentation.splash.SplashScreen
+import pe.com.smart.presentation.users.UsersScreen
+import pe.com.smart.presentation.users.UserProvisioningSelection
 
 import kotlinx.coroutines.flow.collectLatest
 
@@ -164,6 +172,10 @@ fun AppNavigation() {
             ?.destination
             ?.route
 
+    val tokenClaims = AccessTokenClaimsDecoder.decode(TokenStorage.getToken().orEmpty())
+    val isAdministrator = tokenClaims?.hasRole("ADMIN") == true
+    val isDoctor = tokenClaims?.hasRole("DOCTOR") == true
+
     val drawerRoutes =
         setOf(
             Routes.HOME,
@@ -172,7 +184,8 @@ fun AppNavigation() {
             Routes.PATIENTS,
             Routes.DOCTORS,
             Routes.SPECIALITIES,
-            Routes.MEDICAL_SCHEDULES
+            Routes.MEDICAL_SCHEDULES,
+            Routes.USERS
         )
 
     val bottomBarRoutes =
@@ -197,8 +210,33 @@ fun AppNavigation() {
             Routes.SPECIALITY_CREATE,
             Routes.SPECIALITY_DETAIL,
             Routes.SPECIALITY_EDIT,
-            Routes.MEDICAL_SCHEDULES
+            Routes.MEDICAL_SCHEDULES,
+            Routes.USERS
         )
+
+    val administratorRoutes = setOf(
+        Routes.PATIENTS,
+        Routes.PATIENT_CREATE,
+        Routes.PATIENT_DETAIL,
+        Routes.PATIENT_EDIT,
+        Routes.DOCTORS,
+        Routes.DOCTOR_CREATE,
+        Routes.DOCTOR_DETAIL,
+        Routes.DOCTOR_EDIT,
+        Routes.SPECIALITIES,
+        Routes.SPECIALITY_CREATE,
+        Routes.SPECIALITY_DETAIL,
+        Routes.SPECIALITY_EDIT,
+        Routes.MEDICAL_SCHEDULES,
+        Routes.MEDICAL_SCHEDULE_MANAGE,
+        Routes.USERS
+    )
+
+    LaunchedEffect(currentRoute, isAdministrator) {
+        if (currentRoute in administratorRoutes && !isAdministrator) {
+            navController.navigate(Routes.HOME) { popUpTo(Routes.HOME) { inclusive = false } }
+        }
+    }
 
     val showDrawer =
         currentRoute in drawerRoutes
@@ -433,7 +471,9 @@ fun AppNavigation() {
                     doctorDetailRefreshKey++
                 },
 
-                onOpenDrawer = {}
+                onOpenDrawer = {},
+
+                isAdministrator = isAdministrator
             )
 
         } else {
@@ -454,12 +494,18 @@ fun AppNavigation() {
                 drawerContent = {
 
                     AppDrawer(
-                        currentRoute =
-                            currentRoute,
-
-                        username =
-                            "admin",
-
+                        currentRoute = currentRoute,
+                        username = tokenClaims?.username
+                            ?.ifBlank { "Usuario" } ?: "Usuario",
+                        role = when {
+                            isAdministrator -> "Administrador"
+                            isDoctor -> "Médico"
+                            tokenClaims?.hasRole("EMPLOYEE") == true ->
+                                "Empleado"
+                            else -> "Paciente"
+                        },
+                        isAdministrator = isAdministrator,
+                        drawerState = drawerState,
                         onNavigate = { route ->
 
                             scope.launch {
@@ -518,7 +564,7 @@ fun AppNavigation() {
                                 /*
                                  * Eliminamos token.
                                  */
-                                TokenStorage.clearToken()
+                                AuthRepository(ApiProvider.authApiService).logoutRemotely()
 
                                 /*
                                  * Vamos al Login.
@@ -602,7 +648,8 @@ fun AppNavigation() {
                                 drawerState.open()
                             }
                         }
-                    }
+                    },
+                    isAdministrator = isAdministrator
                 )
             }
         }
@@ -692,8 +739,15 @@ private fun AppNavHost(
     onDoctorsChanged: () -> Unit,
     onDoctorDetailChanged: () -> Unit,
     onOpenDrawer: () -> Unit,
+    isAdministrator: Boolean,
     modifier: Modifier = Modifier
 ) {
+
+    val sessionClaims = AccessTokenClaimsDecoder.decode(TokenStorage.getToken().orEmpty())
+    val isDoctor = sessionClaims?.hasRole("DOCTOR") == true
+    // A clinical account can retain a PATIENT claim. The clinical role must take
+    // precedence so its navigation never falls back to the patient experience.
+    val isPatient = sessionClaims?.hasRole("PATIENT") == true && !isDoctor
 
     NavHost(
         navController =
@@ -738,18 +792,9 @@ private fun AppNavHost(
 
             SplashScreen(
                 onFinished = {
-
-                    val destination =
-                        if (
-                            TokenStorage.hasToken()
-                        ) {
-
-                            Routes.HOME
-
-                        } else {
-
-                            Routes.LOGIN
-                        }
+                    val destination = if (TokenStorage.hasToken() &&
+                        AuthRepository(ApiProvider.authApiService).refresh().isSuccess
+                    ) Routes.HOME else Routes.LOGIN
 
                     navController.navigate(
                         destination
@@ -794,143 +839,156 @@ private fun AppNavHost(
 
                         launchSingleTop = true
                     }
-                }
+                },
+                onRegister = { navController.navigate(Routes.REGISTER) }
             )
         }
 
+        composable(Routes.REGISTER) {
+            RegistrationScreen(
+                onRegistered = {
+                    UiMessageManager.success("Cuenta creada", "Ahora inicia sesión.")
+                    navController.popBackStack()
+                },
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Routes.USERS) {
+            AppScreenScaffold(
+                title = "Usuarios",
+                currentRoute = Routes.USERS,
+                showMenu = true,
+                onMenuClick = onOpenDrawer
+            ) { innerPadding ->
+                UsersScreen(Modifier.padding(innerPadding))
+            }
+        }
+
+
         /*
-         * =================================================
+         * =====================================================
          * HOME
-         * =================================================
+         * =====================================================
          */
 
         composable(
-            route =
-                Routes.HOME
+            route = Routes.HOME
         ) {
+            /*
+             * Configuración visual del encabezado
+             * según los roles del usuario autenticado.
+             */
+
+            val homeTitle = when {
+                isAdministrator -> "Administración"
+                isDoctor -> "Panel médico"
+                isPatient -> "Mi salud"
+                else -> "Inicio"
+            }
+
+            val homeSubtitle = when {
+                isAdministrator -> "Gestión del sistema"
+                isDoctor -> "Gestión de atenciones"
+                isPatient -> "Mis citas médicas"
+                else -> null
+            }
+
+            val username = sessionClaims
+                ?.username
+                ?.takeIf { it.isNotBlank() }
+                ?: "Usuario"
 
             AppScreenScaffold(
-                title =
-                    "Inicio",
+                title = homeTitle,
 
-                currentRoute =
-                    Routes.HOME,
+                subtitle = homeSubtitle,
 
-                showMenu =
-                    true,
+                username = username,
 
-                showProfile =
-                    true,
+                currentRoute = Routes.HOME,
 
-                showBottomBar =
-                    true,
+                showMenu = true,
 
-                onMenuClick =
-                    onOpenDrawer,
+                showProfile = true,
+
+                showBottomBar = true,
+
+                isAdministrator = isAdministrator,
+
+                onMenuClick = onOpenDrawer,
 
                 onProfileClick = {
-
                     /*
-                     * Perfil posteriormente.
+                     * La navegación al perfil se
+                     * implementará cuando exista
+                     * la ruta correspondiente.
                      */
                 },
 
                 onNavigate = { route ->
-
                     navigateMainRoute(
-                        navController =
-                            navController,
-
-                        currentRoute =
-                            Routes.HOME,
-
-                        route =
-                            route
+                        navController = navController,
+                        currentRoute = Routes.HOME,
+                        route = route
                     )
                 }
             ) { innerPadding ->
 
                 HomeScreen(
                     onAppointmentsClick = {
-
                         navigateMainRoute(
-                            navController =
-                                navController,
-
-                            currentRoute =
-                                Routes.HOME,
-
-                            route =
-                                Routes.APPOINTMENTS
+                            navController = navController,
+                            currentRoute = Routes.HOME,
+                            route = Routes.APPOINTMENTS
                         )
                     },
 
                     onPatientsClick = {
-
                         navigateMainRoute(
-                            navController =
-                                navController,
-
-                            currentRoute =
-                                Routes.HOME,
-
-                            route =
-                                Routes.PATIENTS
+                            navController = navController,
+                            currentRoute = Routes.HOME,
+                            route = Routes.PATIENTS
                         )
                     },
 
                     onDoctorsClick = {
-
                         navigateMainRoute(
-                            navController =
-                                navController,
-
-                            currentRoute =
-                                Routes.HOME,
-
-                            route =
-                                Routes.DOCTORS
+                            navController = navController,
+                            currentRoute = Routes.HOME,
+                            route = Routes.DOCTORS
                         )
                     },
 
                     onSpecialitiesClick = {
-
                         navigateMainRoute(
-                            navController =
-                                navController,
-
-                            currentRoute =
-                                Routes.HOME,
-
-                            route =
-                                Routes.SPECIALITIES
+                            navController = navController,
+                            currentRoute = Routes.HOME,
+                            route = Routes.SPECIALITIES
                         )
                     },
 
                     onNewAppointmentClick = {
-                        navController.navigate(Routes.appointmentCreate())
+                        navController.navigate(
+                            Routes.appointmentCreate()
+                        )
                     },
 
                     onCalendarClick = {
                         navigateMainRoute(
-                            navController =
-                                navController,
-
-                            currentRoute =
-                                Routes.HOME,
-
-                            route =
-                                Routes.APPOINTMENT_CALENDAR
+                            navController = navController,
+                            currentRoute = Routes.HOME,
+                            route = Routes.APPOINTMENT_CALENDAR
                         )
                     },
 
-                    modifier =
-                        Modifier.padding(
-                            innerPadding
-                        )
+                    modifier = Modifier.padding(
+                        innerPadding
+                    )
                 )
             }
         }
+
 
         /*
          * =================================================
@@ -945,7 +1003,7 @@ private fun AppNavHost(
 
             AppScreenScaffold(
                 title =
-                    "Citas",
+                    if (isDoctor) "Mi agenda" else "Citas",
 
                 currentRoute =
                     Routes.APPOINTMENTS,
@@ -955,6 +1013,8 @@ private fun AppNavHost(
 
                 showBottomBar =
                     true,
+
+                isAdministrator = isAdministrator,
 
                 onMenuClick =
                     onOpenDrawer,
@@ -974,32 +1034,74 @@ private fun AppNavHost(
                 }
             ) { innerPadding ->
 
-                AppointmentsScreen(
-                    modifier =
-                        Modifier.padding(
-                            innerPadding
+                if (isPatient) {
+                    PatientAppointmentsScreen(
+                        onBookAppointment = { navController.navigate(Routes.appointmentCreate()) },
+                        modifier = Modifier.padding(innerPadding)
+                    )
+                } else if (isDoctor) {
+                    DoctorAgendaScreen(
+                        modifier = Modifier.padding(innerPadding)
+                    )
+                } else {
+                    AppointmentsScreen(
+                        modifier = Modifier.padding(innerPadding)
+                    )
+                }
+            }
+        }
+
+
+        /*
+         * =====================================================
+         * APPOINTMENT CALENDAR
+         * =====================================================
+         */
+
+        composable(
+            route = Routes.APPOINTMENT_CALENDAR
+        ) {
+
+            AppScreenScaffold(
+                title = "Calendario",
+
+                currentRoute = Routes.APPOINTMENT_CALENDAR,
+
+                showMenu = true,
+
+                showBottomBar = true,
+
+                isAdministrator = isAdministrator,
+
+                onMenuClick = onOpenDrawer,
+
+                onNavigate = { route ->
+
+                    navigateMainRoute(
+                        navController = navController,
+                        currentRoute = Routes.APPOINTMENT_CALENDAR,
+                        route = route
+                    )
+                }
+            ) { innerPadding ->
+
+                AppointmentCalendarScreen(
+                    onNewAppointment = { date ->
+
+                        navController.navigate(
+                            Routes.appointmentCreate(
+                                date = date
+                            )
                         )
+                    },
+
+                    modifier = Modifier.padding(
+                        innerPadding
+                    )
                 )
             }
         }
 
-        composable(route = Routes.APPOINTMENT_CALENDAR) {
-            AppScreenScaffold(
-                title = "Calendario",
-                currentRoute = Routes.APPOINTMENT_CALENDAR,
-                showMenu = true,
-                showBottomBar = true,
-                onMenuClick = onOpenDrawer,
-                onNavigate = { route -> navigateMainRoute(navController, Routes.APPOINTMENT_CALENDAR, route) }
-            ) { _ ->
-                AppointmentCalendarScreen(
-                    onNewAppointment = { date -> navController.navigate(Routes.appointmentCreate(date = date)) },
-                    // Esta pantalla se dibuja bajo el Scaffold: reservamos una sola vez
-                    // el alto visual del encabezado y la barra inferior.
-                    modifier = Modifier.padding(top = 52.dp, bottom = 112.dp)
-                )
-            }
-        }
 
         composable(
             route = Routes.APPOINTMENT_CREATE,
@@ -1013,7 +1115,8 @@ private fun AppNavHost(
         ) { backStackEntry ->
             val patientId = backStackEntry.arguments?.read { getIntOrNull("patientId") }
                 ?.takeIf { it > 0 }
-            val initialDate = backStackEntry.arguments?.getString("date")?.takeIf { it.isNotBlank() }
+            val initialDate = backStackEntry.arguments?.read { getStringOrNull("date") }
+                ?.takeIf { it.isNotBlank() }
             AppScreenScaffold(
                 title = "Nueva cita",
                 currentRoute = Routes.APPOINTMENTS,
@@ -1053,6 +1156,8 @@ private fun AppNavHost(
 
                 showBottomBar =
                     true,
+
+                isAdministrator = isAdministrator,
 
                 onMenuClick =
                     onOpenDrawer,
@@ -1567,6 +1672,16 @@ private fun AppNavHost(
                         navController.navigate(
                             Routes.doctorEdit(id)
                         )
+                    },
+                    onProvisionAccount = { doctor ->
+                        UserProvisioningSelection.select(
+                            profileId = doctor.id,
+                            role = "DOCTOR",
+                            profileName = doctor.fullName,
+                            specialityId = doctor.specialityId,
+                            email = doctor.email
+                        )
+                        navController.navigate(Routes.USERS)
                     },
                     onDeleted = {
                         onDoctorsChanged()

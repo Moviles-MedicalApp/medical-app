@@ -2,8 +2,9 @@ package pe.com.smart.core.network
 
 object ApiConstants {
 
-    const val BASE_URL =
-        "https://alexguevara.dev/api"
+    /** Gateway URL. Override this value per build/environment, never point mobile
+     * clients at an individual microservice port. */
+    const val BASE_URL = "https://alexguevara.dev"
 
     const val AUTH_SERVER =
         "$BASE_URL/auth-server"

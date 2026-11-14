@@ -1,18 +1,31 @@
+
 package pe.com.smart.presentation.patients
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.People
 import androidx.compose.material.icons.outlined.PersonAdd
+import androidx.compose.material.icons.outlined.SearchOff
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -29,6 +42,15 @@ import pe.com.smart.core.ui.AppLoading
 import pe.com.smart.presentation.patients.components.PatientCard
 import pe.com.smart.presentation.patients.components.PatientSearchBar
 
+/**
+ * Pantalla administrativa de pacientes.
+ *
+ * Conserva:
+ * - Búsqueda del ViewModel.
+ * - Carga mediante refreshKey.
+ * - Navegación al detalle.
+ * - Registro de pacientes.
+ */
 @Composable
 fun PatientsScreen(
     refreshKey: Int = 0,
@@ -37,284 +59,324 @@ fun PatientsScreen(
     modifier: Modifier = Modifier,
     viewModel: PatientsViewModel = viewModel()
 ) {
-
-    val uiState by
-    viewModel.uiState
+    val uiState by viewModel.uiState
         .collectAsStateWithLifecycle()
 
-    LaunchedEffect(
-        refreshKey
-    ) {
+    LaunchedEffect(viewModel, refreshKey) {
         viewModel.loadPatients()
     }
 
+    val isSearching = uiState.searchQuery.isNotBlank()
+    val patientCount = uiState.patients.size
+
     Box(
-        modifier =
-            modifier.fillMaxSize()
+        modifier = modifier.fillMaxSize()
     ) {
-
         when {
-
-            /*
-             * =================================================
-             * LOADING
-             * =================================================
-             */
             uiState.isLoading &&
                     uiState.patients.isEmpty() -> {
-
                 AppLoading(
-                    message =
-                        "Cargando pacientes..."
+                    message = "Cargando pacientes..."
                 )
             }
 
-            /*
-             * =================================================
-             * ERROR
-             * =================================================
-             */
             uiState.error != null &&
                     uiState.patients.isEmpty() -> {
-
                 AppError(
-                    message =
-                        uiState.error
-                            ?: "No se pudieron cargar los pacientes.",
-
-                    onRetry =
-                        viewModel::loadPatients
+                    message = uiState.error
+                        ?: "No se pudieron cargar los pacientes.",
+                    onRetry = viewModel::loadPatients
                 )
             }
 
-            /*
-             * =================================================
-             * CONTENIDO
-             * =================================================
-             */
             else -> {
-
                 LazyColumn(
-                    modifier =
-                        Modifier.fillMaxSize(),
-
-                    contentPadding =
-                        PaddingValues(
-                            start = 16.dp,
-                            end = 16.dp,
-                            top = 16.dp,
-
-                            /*
-                             * Espacio suficiente para
-                             * FAB + BottomBar.
-                             */
-                            bottom = 132.dp
-                        ),
-
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(
+                        start = 16.dp,
+                        top = 20.dp,
+                        end = 16.dp,
+                        bottom = 108.dp
+                    ),
                     verticalArrangement =
-                        Arrangement.spacedBy(
-                            12.dp
-                        )
+                        Arrangement.spacedBy(16.dp)
                 ) {
-
-                    /*
-                     * =========================================
-                     * BUSCADOR
-                     * =========================================
-                     */
                     item {
+                        PatientsHeader()
+                    }
 
-                        PatientSearchBar(
-                            query =
-                                uiState.searchQuery,
-
-                            onQueryChange =
-                                viewModel::onSearchChange
+                    item {
+                        PatientsSummary(
+                            count = patientCount,
+                            isSearching = isSearching
                         )
                     }
 
-                    /*
-                     * =========================================
-                     * CONTADOR
-                     * =========================================
-                     */
-                    if (uiState.patients.isNotEmpty()) {
+                    item {
+                        Column(
+                            verticalArrangement =
+                                Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = "Buscar paciente",
+                                style = MaterialTheme
+                                    .typography.titleSmall,
+                                fontWeight = FontWeight.SemiBold
+                            )
 
-                        item {
-
-                            PatientsCount(
-                                count =
-                                    uiState.patients.size,
-
-                                isSearching =
-                                    uiState.searchQuery
-                                        .isNotBlank()
+                            PatientSearchBar(
+                                query = uiState.searchQuery,
+                                onQueryChange =
+                                    viewModel::onSearchChange
                             )
                         }
                     }
 
-                    /*
-                     * =========================================
-                     * VACÍO
-                     * =========================================
-                     */
-                    if (uiState.patients.isEmpty()) {
-
+                    if (uiState.isLoading) {
                         item {
+                            Row(
+                                verticalAlignment =
+                                    Alignment.CenterVertically,
+                                horizontalArrangement =
+                                    Arrangement.spacedBy(10.dp)
+                            ) {
+                                CircularProgressIndicator(
+                                    modifier =
+                                        Modifier.size(18.dp),
+                                    strokeWidth = 2.dp
+                                )
 
-                            AppEmptyState(
-                                title =
-                                    if (
-                                        uiState.searchQuery
-                                            .isBlank()
-                                    ) {
-                                        "Sin pacientes"
-                                    } else {
-                                        "Sin resultados"
-                                    },
+                                Text(
+                                    text = "Actualizando pacientes...",
+                                    style = MaterialTheme
+                                        .typography.bodySmall,
+                                    color = MaterialTheme
+                                        .colorScheme
+                                        .onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
 
-                                message =
-                                    if (
-                                        uiState.searchQuery
-                                            .isBlank()
-                                    ) {
-                                        "No hay pacientes registrados."
-                                    } else {
-                                        "No se encontraron pacientes que coincidan con la búsqueda."
-                                    }
+                    if (uiState.error != null) {
+                        item {
+                            Surface(
+                                modifier = Modifier.fillMaxWidth(),
+                                color = MaterialTheme
+                                    .colorScheme.errorContainer,
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Text(
+                                    text = uiState.error.orEmpty(),
+                                    modifier = Modifier.padding(14.dp),
+                                    style = MaterialTheme
+                                        .typography.bodySmall,
+                                    color = MaterialTheme
+                                        .colorScheme.onErrorContainer
+                                )
+                            }
+                        }
+                    }
+
+                    item {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment =
+                                Alignment.CenterVertically,
+                            horizontalArrangement =
+                                Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = if (isSearching) {
+                                    "Resultados de búsqueda"
+                                } else {
+                                    "Listado de pacientes"
+                                },
+                                style = MaterialTheme
+                                    .typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+
+                            Text(
+                                text = patientCount.toString(),
+                                style = MaterialTheme
+                                    .typography.labelLarge,
+                                color = MaterialTheme
+                                    .colorScheme.primary,
+                                fontWeight = FontWeight.Bold
                             )
                         }
+                    }
 
+                    if (uiState.patients.isEmpty()) {
+                        item {
+                            AppEmptyState(
+                                title = if (isSearching) {
+                                    "Sin resultados"
+                                } else {
+                                    "Sin pacientes registrados"
+                                },
+                                message = if (isSearching) {
+                                    "No se encontraron pacientes que coincidan con tu búsqueda."
+                                } else {
+                                    "Los pacientes registrados aparecerán aquí."
+                                }
+                            )
+                        }
                     } else {
-
-                        /*
-                         * =====================================
-                         * LISTADO
-                         * =====================================
-                         */
                         items(
-                            items =
-                                uiState.patients,
-
-                            key = {
-                                it.id
-                            }
+                            items = uiState.patients,
+                            key = { patient -> patient.id }
                         ) { patient ->
-
                             PatientCard(
-                                patient =
-                                    patient,
-
+                                patient = patient,
                                 onClick = {
-
-                                    onPatientClick(
-                                        patient.id
-                                    )
+                                    onPatientClick(patient.id)
                                 }
                             )
                         }
                     }
                 }
 
-                /*
-                 * =================================================
-                 * NUEVO PACIENTE
-                 * =================================================
-                 */
                 ExtendedFloatingActionButton(
-                    onClick =
-                        onCreatePatientClick,
-
-                    modifier =
-                        Modifier
-                            .align(
-                                Alignment.BottomEnd
-                            )
-                            .padding(
-                                end = 16.dp,
-                                bottom = 16.dp
-                            ),
-
+                    onClick = onCreatePatientClick,
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(
+                            end = 16.dp,
+                            bottom = 16.dp
+                        ),
                     icon = {
-
                         Icon(
                             imageVector =
                                 Icons.Outlined.PersonAdd,
-
-                            contentDescription =
-                                null
+                            contentDescription = null
                         )
                     },
-
                     text = {
-
                         Text(
-                            text =
-                                "Nuevo paciente",
-
-                            fontWeight =
-                                FontWeight.SemiBold
+                            text = "Nuevo paciente",
+                            fontWeight = FontWeight.SemiBold
                         )
                     },
-
-                    containerColor =
-                        MaterialTheme.colorScheme.primaryContainer,
-
-                    contentColor =
-                        MaterialTheme.colorScheme.primary
+                    containerColor = MaterialTheme
+                        .colorScheme.primaryContainer,
+                    contentColor = MaterialTheme
+                        .colorScheme.onPrimaryContainer
                 )
             }
         }
     }
 }
 
-
-/*
- * =====================================================
- * CONTADOR
- * =====================================================
+/**
+ * Encabezado de la pantalla.
  */
-
 @Composable
-private fun PatientsCount(
+private fun PatientsHeader() {
+    Column(
+        verticalArrangement =
+            Arrangement.spacedBy(5.dp)
+    ) {
+        Text(
+            text = "Gestión de pacientes",
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+
+        Text(
+            text = "Consulta y administra la información de los pacientes registrados.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme
+                .colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+/**
+ * Tarjeta de resumen.
+ *
+ * Cuando hay una búsqueda activa, el total
+ * corresponde al resultado filtrado.
+ */
+@Composable
+private fun PatientsSummary(
     count: Int,
     isSearching: Boolean
 ) {
+    val colors = MaterialTheme.colorScheme
 
-    Column(
-        modifier =
-            Modifier.padding(
-                horizontal = 2.dp,
-                vertical = 2.dp
-            )
-    ) {
-
-        Text(
-            text =
-                when {
-
-                    isSearching &&
-                            count == 1 ->
-                        "1 resultado encontrado"
-
-                    isSearching ->
-                        "$count resultados encontrados"
-
-                    count == 1 ->
-                        "1 paciente registrado"
-
-                    else ->
-                        "$count pacientes registrados"
-                },
-
-            style =
-                MaterialTheme.typography.bodySmall,
-
-            fontWeight =
-                FontWeight.Medium,
-
-            color =
-                MaterialTheme.colorScheme.onSurfaceVariant
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = colors.primaryContainer
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 0.dp
         )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(18.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement =
+                Arrangement.spacedBy(14.dp)
+        ) {
+            Surface(
+                modifier = Modifier.size(52.dp),
+                shape = RoundedCornerShape(15.dp),
+                color = colors.surface
+            ) {
+                Box(
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = if (isSearching) {
+                            Icons.Outlined.SearchOff
+                        } else {
+                            Icons.Outlined.People
+                        },
+                        contentDescription = null,
+                        tint = colors.primary,
+                        modifier = Modifier.size(27.dp)
+                    )
+                }
+            }
+
+            Column(
+                verticalArrangement =
+                    Arrangement.spacedBy(3.dp)
+            ) {
+                Text(
+                    text = count.toString(),
+                    style = MaterialTheme
+                        .typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = colors.onPrimaryContainer
+                )
+
+                Text(
+                    text = when {
+                        isSearching && count == 1 ->
+                            "Resultado encontrado"
+
+                        isSearching ->
+                            "Resultados encontrados"
+
+                        count == 1 ->
+                            "Paciente registrado"
+
+                        else ->
+                            "Pacientes registrados"
+                    },
+                    style = MaterialTheme
+                        .typography.bodyMedium,
+                    color = colors.onPrimaryContainer
+                )
+            }
+        }
     }
 }

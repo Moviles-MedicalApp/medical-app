@@ -30,4 +30,24 @@ data class AppointmentRequestDto(
 )
 
 @Serializable
+data class CreateOwnAppointmentRequest(
+    val reason: String,
+    val appointmentDate: String,
+    val startTime: String,
+    val endTime: String,
+    val doctorId: Int
+)
+
+@Serializable
 data class AppointmentStatusDto(val id: Int)
+
+@Serializable
+data class DoctorAgendaDto(
+    val doctorId: Int,
+    val doctorFullName: String = "",
+    val status: String = "CONFIRMED",
+    val dateFrom: String = "",
+    val dateTo: String = "",
+    val total: Int = 0,
+    val appointments: List<AppointmentDto> = emptyList()
+)

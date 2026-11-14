@@ -18,6 +18,13 @@ class PatientApiService(
     private val client: HttpClient
 ) {
 
+    /** Current patient's profile. No patient id is accepted from the UI. */
+    suspend fun getMyProfile(): PatientDto {
+        val response = client.get("${ApiConstants.MEDICAL_APPOINTMENT}/patients/me")
+        response.ensureSuccess("No se pudo obtener tu perfil.")
+        return response.body()
+    }
+
     suspend fun getPatients(): List<PatientDto> {
 
         val response = client.get(

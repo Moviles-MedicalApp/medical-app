@@ -7,6 +7,8 @@ object TokenStorage {
     private const val ACCESS_TOKEN_KEY =
         "access_token"
 
+    private const val REFRESH_TOKEN_KEY = "refresh_token"
+
     private val settings: Settings =
         Settings()
 
@@ -15,6 +17,12 @@ object TokenStorage {
             ACCESS_TOKEN_KEY,
             token
         )
+    }
+
+    /** Store both values together so callers never intentionally persist only one. */
+    fun saveTokens(accessToken: String, refreshToken: String) {
+        settings.putString(ACCESS_TOKEN_KEY, accessToken)
+        settings.putString(REFRESH_TOKEN_KEY, refreshToken)
     }
 
     fun getToken(): String? {
@@ -29,10 +37,14 @@ object TokenStorage {
         return !getToken().isNullOrBlank()
     }
 
-    fun clearToken() {
+    fun getRefreshToken(): String? = settings.getStringOrNull(REFRESH_TOKEN_KEY)
 
-        settings.remove(
-            ACCESS_TOKEN_KEY
-        )
+    fun clearToken() {
+        clearTokens()
+    }
+
+    fun clearTokens() {
+        settings.remove(ACCESS_TOKEN_KEY)
+        settings.remove(REFRESH_TOKEN_KEY)
     }
 }

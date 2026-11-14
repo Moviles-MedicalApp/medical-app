@@ -1,3 +1,4 @@
+
 package pe.com.smart.core.ui
 
 import androidx.compose.foundation.layout.size
@@ -14,241 +15,261 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import pe.com.smart.data.local.AccessTokenClaimsDecoder
+import pe.com.smart.data.local.TokenStorage
 import pe.com.smart.presentation.navigation.Routes
 
+/**
+ * Modelo visual de cada opción del BottomBar.
+ *
+ * No contiene lógica de navegación ni permisos.
+ */
+private data class BottomNavigationItem(
+    val route: String,
+    val title: String,
+    val icon: ImageVector
+)
+
+/**
+ * Barra de navegación inferior de MedicalApp.
+ *
+ * Opciones según el rol:
+ *
+ * DOCTOR:
+ * - Inicio
+ * - Mi agenda
+ *
+ * PATIENT:
+ * - Inicio
+ * - Mis citas
+ * - Calendario
+ *
+ * ADMIN:
+ * - Inicio
+ * - Citas
+ * - Calendario
+ * - Pacientes
+ *
+ * La autorización definitiva debe ser
+ * validada también por el backend.
+ */
 @Composable
 fun AppBottomBar(
     currentRoute: String?,
-    onNavigate: (String) -> Unit
+    isAdministrator: Boolean,
+    onNavigate: (String) -> Unit,
+    modifier: Modifier = Modifier
 ) {
 
-    NavigationBar(
-        containerColor = MaterialTheme.colorScheme.surface
-    ) {
+    // =====================================================
+    // SESSION
+    // =====================================================
 
-        /*
-         * =================================================
-         * INICIO
-         * =================================================
-         */
-        NavigationBarItem(
-            selected = currentRoute == Routes.HOME,
+    val claims = AccessTokenClaimsDecoder.decode(
+        TokenStorage.getToken().orEmpty()
+    )
 
-            onClick = {
-                onNavigate(Routes.HOME)
-            },
+    // =====================================================
+    // ROLES
+    // =====================================================
 
-            icon = {
+    /*
+     * Se respeta la prioridad del rol ADMIN
+     * utilizada por AppNavigation.
+     */
+    val isAdmin = isAdministrator &&
+            claims?.hasRole("ADMIN") == true
 
-                Icon(
-                    imageVector = Icons.Outlined.Home,
-                    contentDescription = "Inicio",
-                    modifier = Modifier.size(24.dp)
-                )
-            },
+    val isDoctor = !isAdmin &&
+            claims?.hasRole("DOCTOR") == true
 
-            label = {
+    val isPatient = !isAdmin &&
+            !isDoctor &&
+            claims?.hasRole("PATIENT") == true
 
-                Text(
-                    text = "Inicio",
+    // =====================================================
+    // NAVIGATION OPTIONS
+    // =====================================================
 
-                    style =
-                        MaterialTheme.typography.labelMedium,
+    val items = buildList {
 
-                    fontWeight =
-                        if (
-                            currentRoute ==
-                            Routes.HOME
-                        ) {
-                            FontWeight.SemiBold
-                        } else {
-                            FontWeight.Normal
-                        }
-                )
-            },
-
-            colors =
-                NavigationBarItemDefaults.colors(
-                    selectedIconColor =
-                        MaterialTheme.colorScheme.primary,
-
-                    selectedTextColor =
-                        MaterialTheme.colorScheme.primary,
-
-                    indicatorColor =
-                        MaterialTheme.colorScheme.primaryContainer,
-
-                    unselectedIconColor =
-                        MaterialTheme.colorScheme.onSurfaceVariant,
-
-                    unselectedTextColor =
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                )
-        )
-
-
-        NavigationBarItem(
-            selected = currentRoute == Routes.APPOINTMENT_CALENDAR,
-            onClick = { onNavigate(Routes.APPOINTMENT_CALENDAR) },
-            icon = { Icon(Icons.Outlined.DateRange, contentDescription = "Calendario", modifier = Modifier.size(24.dp)) },
-            label = {
-                Text(
-                    text = "Calendario",
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = if (currentRoute == Routes.APPOINTMENT_CALENDAR) FontWeight.SemiBold else FontWeight.Normal
-                )
-            },
-            colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = MaterialTheme.colorScheme.primary,
-                selectedTextColor = MaterialTheme.colorScheme.primary,
-                indicatorColor = MaterialTheme.colorScheme.primaryContainer,
-                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+        // INICIO: disponible para todos.
+        add(
+            BottomNavigationItem(
+                route = Routes.HOME,
+                title = "Inicio",
+                icon = Icons.Outlined.Home
             )
         )
 
+        when {
 
-        /*
-         * =================================================
-         * CITAS
-         * =================================================
-         */
-        NavigationBarItem(
-            selected =
-                currentRoute ==
-                        Routes.APPOINTMENTS,
+            // =============================================
+            // ADMINISTRATOR
+            // =============================================
 
-            onClick = {
+            isAdmin -> {
 
-                onNavigate(
-                    Routes.APPOINTMENTS
+                add(
+                    BottomNavigationItem(
+                        route = Routes.APPOINTMENTS,
+                        title = "Citas",
+                        icon = Icons.Outlined.CalendarMonth
+                    )
                 )
-            },
 
-            icon = {
-
-                Icon(
-                    imageVector =
-                        Icons.Outlined.CalendarMonth,
-
-                    contentDescription =
-                        "Citas",
-
-                    modifier =
-                        Modifier.size(24.dp)
+                add(
+                    BottomNavigationItem(
+                        route = Routes.APPOINTMENT_CALENDAR,
+                        title = "Calendario",
+                        icon = Icons.Outlined.DateRange
+                    )
                 )
-            },
 
-            label = {
-
-                Text(
-                    text = "Citas",
-
-                    style =
-                        MaterialTheme.typography.labelMedium,
-
-                    fontWeight =
-                        if (
-                            currentRoute ==
-                            Routes.APPOINTMENTS
-                        ) {
-                            FontWeight.SemiBold
-                        } else {
-                            FontWeight.Normal
-                        }
+                add(
+                    BottomNavigationItem(
+                        route = Routes.PATIENTS,
+                        title = "Pacientes",
+                        icon = Icons.Outlined.People
+                    )
                 )
-            },
+            }
 
-            colors =
-                NavigationBarItemDefaults.colors(
-                    selectedIconColor =
-                        MaterialTheme.colorScheme.primary,
+            // =============================================
+            // DOCTOR
+            // =============================================
 
-                    selectedTextColor =
-                        MaterialTheme.colorScheme.primary,
+            isDoctor -> {
 
-                    indicatorColor =
-                        MaterialTheme.colorScheme.primaryContainer,
-
-                    unselectedIconColor =
-                        MaterialTheme.colorScheme.onSurfaceVariant,
-
-                    unselectedTextColor =
-                        MaterialTheme.colorScheme.onSurfaceVariant
+                add(
+                    BottomNavigationItem(
+                        route = Routes.APPOINTMENTS,
+                        title = "Mi agenda",
+                        icon = Icons.Outlined.CalendarMonth
+                    )
                 )
+            }
+
+            // =============================================
+            // PATIENT
+            // =============================================
+
+            isPatient -> {
+
+                add(
+                    BottomNavigationItem(
+                        route = Routes.APPOINTMENTS,
+                        title = "Mis citas",
+                        icon = Icons.Outlined.CalendarMonth
+                    )
+                )
+
+                add(
+                    BottomNavigationItem(
+                        route = Routes.APPOINTMENT_CALENDAR,
+                        title = "Calendario",
+                        icon = Icons.Outlined.DateRange
+                    )
+                )
+            }
+        }
+    }
+
+    // =====================================================
+    // COLORS
+    // =====================================================
+
+    val colors = MaterialTheme.colorScheme
+
+    val navigationColors =
+        NavigationBarItemDefaults.colors(
+
+            selectedIconColor = colors.primary,
+
+            selectedTextColor = colors.primary,
+
+            indicatorColor = colors.primaryContainer,
+
+            unselectedIconColor =
+                colors.onSurfaceVariant,
+
+            unselectedTextColor =
+                colors.onSurfaceVariant
         )
 
+    // =====================================================
+    // BOTTOM NAVIGATION
+    // =====================================================
 
-        /*
-         * =================================================
-         * PACIENTES
-         * =================================================
-         */
-        NavigationBarItem(
-            selected =
-                currentRoute ==
-                        Routes.PATIENTS,
+    NavigationBar(
+        modifier = modifier,
+        containerColor = colors.surface,
+        contentColor = colors.onSurface,
+        tonalElevation = 0.dp
+    ) {
 
-            onClick = {
+        items.forEach { item ->
 
-                onNavigate(
-                    Routes.PATIENTS
-                )
-            },
+            val isSelected =
+                currentRoute == item.route
 
-            icon = {
+            NavigationBarItem(
+                selected = isSelected,
 
-                Icon(
-                    imageVector =
-                        Icons.Outlined.People,
+                onClick = {
 
-                    contentDescription =
-                        "Pacientes",
+                    /*
+                     * Evita solicitar navegación
+                     * cuando ya estamos en esa ruta.
+                     */
+                    if (!isSelected) {
+                        onNavigate(item.route)
+                    }
+                },
 
-                    modifier =
-                        Modifier.size(24.dp)
-                )
-            },
+                icon = {
 
-            label = {
+                    Icon(
+                        imageVector = item.icon,
 
-                Text(
-                    text = "Pacientes",
+                        contentDescription = null,
 
-                    style =
-                        MaterialTheme.typography.labelMedium,
+                        modifier = Modifier.size(
+                            24.dp
+                        )
+                    )
+                },
 
-                    fontWeight =
-                        if (
-                            currentRoute ==
-                            Routes.PATIENTS
-                        ) {
-                            FontWeight.SemiBold
-                        } else {
-                            FontWeight.Normal
-                        }
-                )
-            },
+                label = {
 
-            colors =
-                NavigationBarItemDefaults.colors(
-                    selectedIconColor =
-                        MaterialTheme.colorScheme.primary,
+                    Text(
+                        text = item.title,
 
-                    selectedTextColor =
-                        MaterialTheme.colorScheme.primary,
+                        style =
+                            MaterialTheme.typography.bodySmall,
 
-                    indicatorColor =
-                        MaterialTheme.colorScheme.primaryContainer,
+                        fontWeight =
+                            if (isSelected) {
+                                FontWeight.SemiBold
+                            } else {
+                                FontWeight.Medium
+                            },
 
-                    unselectedIconColor =
-                        MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
 
-                    unselectedTextColor =
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                )
-        )
+                        overflow =
+                            TextOverflow.Ellipsis
+                    )
+                },
+
+                alwaysShowLabel = true,
+
+                colors = navigationColors
+            )
+        }
     }
 }
