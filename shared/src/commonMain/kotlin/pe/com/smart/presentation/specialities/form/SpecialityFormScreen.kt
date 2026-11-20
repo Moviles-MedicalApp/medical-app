@@ -21,6 +21,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import org.koin.compose.koinInject
+import pe.com.smart.domain.usecase.SpecialityUseCase
 import pe.com.smart.core.ui.AppConfirmDialog
 import pe.com.smart.core.ui.AppError
 import pe.com.smart.core.ui.AppLoading
@@ -39,6 +41,7 @@ fun SpecialityFormScreen(
     backRequestKey: Int = 0,
     modifier: Modifier = Modifier
 ) {
+    val specialityUseCase: SpecialityUseCase = koinInject()
     val formViewModel: SpecialityFormViewModel = viewModel(
         key = if (specialityId == null) {
             "speciality_create"
@@ -46,9 +49,7 @@ fun SpecialityFormScreen(
             "speciality_edit_$specialityId"
         }
     ) {
-        SpecialityFormViewModel(
-            specialityId = specialityId
-        )
+        SpecialityFormViewModel(specialityId, specialityUseCase)
     }
 
     val uiState by formViewModel.uiState

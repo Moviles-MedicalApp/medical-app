@@ -28,6 +28,7 @@ import androidx.navigation.navArgument
 import androidx.savedstate.read
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.koin.compose.koinInject
 import pe.com.smart.core.ui.AppDrawer
 import pe.com.smart.core.ui.AppMessageDialog
 import pe.com.smart.core.ui.AppScreenScaffold
@@ -37,8 +38,7 @@ import pe.com.smart.core.ui.message.UiMessageManager
 import pe.com.smart.data.local.SessionManager
 import pe.com.smart.data.local.TokenStorage
 import pe.com.smart.data.local.AccessTokenClaimsDecoder
-import pe.com.smart.data.remote.ApiProvider
-import pe.com.smart.data.repository.AuthRepository
+import pe.com.smart.domain.usecase.AuthUseCase
 import pe.com.smart.presentation.appointments.AppointmentsScreen
 import pe.com.smart.presentation.appointments.AppointmentCalendarScreen
 import pe.com.smart.presentation.appointments.DoctorAgendaScreen
@@ -65,6 +65,7 @@ import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun AppNavigation() {
+    val authUseCase: AuthUseCase = koinInject()
 
     val navController =
         rememberNavController()
@@ -564,7 +565,7 @@ fun AppNavigation() {
                                 /*
                                  * Eliminamos token.
                                  */
-                                AuthRepository(ApiProvider.authApiService).logoutRemotely()
+                                authUseCase.logoutRemotely()
 
                                 /*
                                  * Vamos al Login.
@@ -743,6 +744,8 @@ private fun AppNavHost(
     modifier: Modifier = Modifier
 ) {
 
+    val authUseCase: AuthUseCase = koinInject()
+
     val sessionClaims = AccessTokenClaimsDecoder.decode(TokenStorage.getToken().orEmpty())
     val isDoctor = sessionClaims?.hasRole("DOCTOR") == true
     // A clinical account can retain a PATIENT claim. The clinical role must take
@@ -793,7 +796,7 @@ private fun AppNavHost(
             SplashScreen(
                 onFinished = {
                     val destination = if (TokenStorage.hasToken() &&
-                        AuthRepository(ApiProvider.authApiService).refresh().isSuccess
+                        authUseCase.refresh().isSuccess
                     ) Routes.HOME else Routes.LOGIN
 
                     navController.navigate(

@@ -43,7 +43,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import org.koin.compose.viewmodel.koinViewModel
 import pe.com.smart.core.ui.AppConfirmDialog
 import pe.com.smart.core.ui.AppEmptyState
 import pe.com.smart.core.ui.AppError
@@ -69,7 +69,7 @@ import pe.com.smart.presentation.appointments.components.AppointmentStatusBadge
 @Composable
 fun DoctorAgendaScreen(
     modifier: Modifier = Modifier,
-    viewModel: AppointmentsViewModel = viewModel()
+    viewModel: AppointmentsViewModel = koinViewModel()
 ) {
 
     // =====================================================

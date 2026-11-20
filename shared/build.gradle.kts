@@ -175,6 +175,14 @@ kotlin {
                 libs.androidx.lifecycle.runtimeCompose
             )
 
+            /*
+             * Dependency injection. Mirrors the reference application's
+             * Koin-based composition root while keeping the existing flows.
+             */
+            implementation(libs.koin.core)
+            implementation(libs.koin.compose)
+            implementation(libs.koin.compose.viewmodel)
+
 
             /*
              * -------------------------------------------------

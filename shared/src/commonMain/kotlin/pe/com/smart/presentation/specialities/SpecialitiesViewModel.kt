@@ -6,14 +6,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import pe.com.smart.data.remote.ApiProvider
 import pe.com.smart.domain.model.Speciality
-import pe.com.smart.domain.repository.SpecialityRepository
+import pe.com.smart.domain.usecase.SpecialityUseCase
 
-class SpecialitiesViewModel : ViewModel() {
-
-    private val repository: SpecialityRepository =
-        ApiProvider.specialityRepository
+class SpecialitiesViewModel(
+    private val repository: SpecialityUseCase
+) : ViewModel() {
 
     private val _uiState =
         MutableStateFlow(

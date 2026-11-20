@@ -53,7 +53,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import org.koin.compose.viewmodel.koinViewModel
 
 /**
  * Registro público de pacientes.
@@ -65,7 +65,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 fun RegistrationScreen(
     onRegistered: () -> Unit,
     onBack: () -> Unit,
-    viewModel: RegistrationViewModel = viewModel()
+    viewModel: RegistrationViewModel = koinViewModel()
 ) {
     val state by viewModel.uiState
         .collectAsStateWithLifecycle()

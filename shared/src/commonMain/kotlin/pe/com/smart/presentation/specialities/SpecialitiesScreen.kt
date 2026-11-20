@@ -32,7 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import org.koin.compose.viewmodel.koinViewModel
 import pe.com.smart.core.ui.AppEmptyState
 import pe.com.smart.core.ui.AppError
 import pe.com.smart.core.ui.AppLoading
@@ -54,7 +54,7 @@ fun SpecialitiesScreen(
     onSpecialityClick: ((Int) -> Unit)? = null,
     onCreateSpecialityClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
-    viewModel: SpecialitiesViewModel = viewModel()
+    viewModel: SpecialitiesViewModel = koinViewModel()
 ) {
     val uiState by viewModel.uiState
         .collectAsStateWithLifecycle()

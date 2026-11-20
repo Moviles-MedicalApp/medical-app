@@ -13,6 +13,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import pe.com.smart.core.ui.AppLogo
 
 @Composable
 fun SplashScreen(
@@ -27,6 +28,12 @@ fun SplashScreen(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        AppLogo(size = 128.dp)
+
+        Spacer(
+            modifier = Modifier.height(20.dp)
+        )
+
         Text(
             text = "Medical App",
             style = MaterialTheme.typography.headlineMedium,
@@ -34,7 +41,7 @@ fun SplashScreen(
         )
 
         Spacer(
-            modifier = Modifier.height(24.dp)
+            modifier = Modifier.height(28.dp)
         )
 
         CircularProgressIndicator(

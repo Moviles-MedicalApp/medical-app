@@ -51,9 +51,10 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import org.koin.compose.viewmodel.koinViewModel
 import pe.com.smart.core.ui.AppEmptyState
 import pe.com.smart.core.ui.AppError
+import pe.com.smart.presentation.components.form.AppSearchField
 import pe.com.smart.domain.model.Doctor
 import pe.com.smart.domain.model.MedicalSchedule
 
@@ -61,7 +62,7 @@ import pe.com.smart.domain.model.MedicalSchedule
 fun MedicalSchedulesScreen(
     onManageDoctor: (Int) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: MedicalSchedulesViewModel = viewModel()
+    viewModel: MedicalSchedulesViewModel = koinViewModel()
 ) {
     val state by viewModel.uiState
         .collectAsStateWithLifecycle()
@@ -228,43 +229,12 @@ fun MedicalSchedulesScreen(
                     }
 
                     item {
-                        OutlinedTextField(
-                            value = state.searchQuery,
-                            onValueChange =
-                                viewModel::onSearchChange,
+                        AppSearchField(
+                            query = state.searchQuery,
+                            onQueryChange = viewModel::onSearchChange,
                             modifier = Modifier.fillMaxWidth(),
-                            label = {
-                                Text("Buscar médico u horario")
-                            },
-                            placeholder = {
-                                Text("Nombre, especialidad o día")
-                            },
-                            leadingIcon = {
-                                Icon(
-                                    Icons.Outlined.Search,
-                                    contentDescription = null
-                                )
-                            },
-                            trailingIcon = {
-                                if (state.searchQuery.isNotEmpty()) {
-                                    IconButton(
-                                        onClick = {
-                                            viewModel.onSearchChange("")
-                                        }
-                                    ) {
-                                        Icon(
-                                            Icons.Outlined.Close,
-                                            contentDescription =
-                                                "Limpiar búsqueda"
-                                        )
-                                    }
-                                }
-                            },
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(
-                                imeAction = ImeAction.Search
-                            ),
-                            shape = RoundedCornerShape(14.dp)
+                            placeholder = "Nombre, especialidad o día",
+                            contentDescription = "Buscar médico u horario"
                         )
                     }
 

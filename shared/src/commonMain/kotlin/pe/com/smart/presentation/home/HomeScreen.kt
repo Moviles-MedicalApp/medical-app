@@ -48,7 +48,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import org.koin.compose.viewmodel.koinViewModel
 
 import pe.com.smart.data.local.AccessTokenClaimsDecoder
 import pe.com.smart.data.local.TokenStorage
@@ -64,7 +64,7 @@ fun HomeScreen(
     onNewAppointmentClick: () -> Unit,
     onCalendarClick: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: HomeViewModel = viewModel()
+    viewModel: HomeViewModel = koinViewModel()
 ) {
     val state by viewModel.uiState
         .collectAsStateWithLifecycle()

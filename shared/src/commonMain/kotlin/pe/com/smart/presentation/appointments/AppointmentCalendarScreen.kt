@@ -58,7 +58,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import org.koin.compose.viewmodel.koinViewModel
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -85,7 +85,7 @@ private enum class CalendarViewMode {
 fun AppointmentCalendarScreen(
     onNewAppointment: (String) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: AppointmentsViewModel = viewModel()
+    viewModel: AppointmentsViewModel = koinViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 

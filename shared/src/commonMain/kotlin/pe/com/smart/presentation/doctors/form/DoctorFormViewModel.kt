@@ -7,20 +7,15 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import pe.com.smart.core.ui.message.UiMessageManager
-import pe.com.smart.data.remote.ApiProvider
 import pe.com.smart.domain.model.Speciality
-import pe.com.smart.domain.repository.DoctorRepository
-import pe.com.smart.domain.repository.SpecialityRepository
+import pe.com.smart.domain.usecase.DoctorUseCase
+import pe.com.smart.domain.usecase.SpecialityUseCase
 
 class DoctorFormViewModel(
-    private val doctorId: Int?
+    private val doctorId: Int?,
+    private val doctorRepository: DoctorUseCase,
+    private val specialityRepository: SpecialityUseCase
 ) : ViewModel() {
-
-    private val doctorRepository: DoctorRepository =
-        ApiProvider.doctorRepository
-
-    private val specialityRepository: SpecialityRepository =
-        ApiProvider.specialityRepository
 
     private val _uiState = MutableStateFlow(DoctorFormUiState())
     val uiState: StateFlow<DoctorFormUiState> = _uiState.asStateFlow()

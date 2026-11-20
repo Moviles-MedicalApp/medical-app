@@ -7,9 +7,13 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import pe.com.smart.data.remote.ApiProvider
+import pe.com.smart.domain.usecase.DoctorUseCase
+import pe.com.smart.domain.usecase.MedicalScheduleUseCase
 
-class MedicalSchedulesViewModel : ViewModel() {
+class MedicalSchedulesViewModel(
+    private val doctorUseCase: DoctorUseCase,
+    private val medicalScheduleUseCase: MedicalScheduleUseCase
+) : ViewModel() {
     private val _uiState = MutableStateFlow(MedicalSchedulesUiState())
     val uiState: StateFlow<MedicalSchedulesUiState> = _uiState.asStateFlow()
 
@@ -17,8 +21,8 @@ class MedicalSchedulesViewModel : ViewModel() {
         if (_uiState.value.isLoading) return
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
-            val doctors = async { ApiProvider.doctorRepository.getDoctors() }
-            val schedules = async { ApiProvider.medicalScheduleRepository.getSchedules() }
+            val doctors = async { doctorUseCase.getDoctors() }
+            val schedules = async { medicalScheduleUseCase.getSchedules() }
             val doctorsResult = doctors.await()
             val schedulesResult = schedules.await()
             _uiState.value = MedicalSchedulesUiState(

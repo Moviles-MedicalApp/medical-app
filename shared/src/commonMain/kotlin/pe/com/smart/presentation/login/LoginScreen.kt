@@ -38,7 +38,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import org.koin.compose.viewmodel.koinViewModel
 import pe.com.smart.core.ui.theme.SuccessGreen
 import pe.com.smart.presentation.login.components.LoginHeader
 import pe.com.smart.presentation.login.components.LoginTextField
@@ -51,7 +51,7 @@ fun LoginScreen(
     message: String? = null,
     onConsultAppointments: () -> Unit = {},
     modifier: Modifier = Modifier,
-    viewModel: LoginViewModel = viewModel()
+    viewModel: LoginViewModel = koinViewModel()
 ) {
 
     val uiState by

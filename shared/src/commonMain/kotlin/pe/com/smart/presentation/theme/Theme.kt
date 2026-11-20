@@ -24,6 +24,8 @@ private val LightColorScheme = lightColorScheme(
 
     secondary = TextSecondary,
     onSecondary = CardBackground,
+    secondaryContainer = MedicalBlueContainer,
+    onSecondaryContainer = MedicalBlueDark,
 
     // ========================================================
     // BACKGROUND
@@ -75,6 +77,8 @@ private val DarkColorScheme = darkColorScheme(
 
     secondary = DarkTextSecondary,
     onSecondary = DarkBackground,
+    secondaryContainer = DarkSurface,
+    onSecondaryContainer = DarkTextPrimary,
 
     // ========================================================
     // BACKGROUND

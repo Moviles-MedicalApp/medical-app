@@ -9,16 +9,13 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import pe.com.smart.data.remote.ApiProvider
 import pe.com.smart.data.remote.auth.ApiRequestException
 import pe.com.smart.data.remote.auth.dto.PatientRegistrationRequest
-import pe.com.smart.data.repository.AuthRepository
+import pe.com.smart.domain.usecase.AuthUseCase
 
-class RegistrationViewModel : ViewModel() {
-
-    private val repository = AuthRepository(
-        ApiProvider.authApiService
-    )
+class RegistrationViewModel(
+    private val authUseCase: AuthUseCase
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(
         RegistrationUiState()
@@ -137,7 +134,7 @@ class RegistrationViewModel : ViewModel() {
                         .ifBlank { null }
                 )
 
-                repository.registerPatient(request)
+                authUseCase.registerPatient(request)
                     .getOrThrow()
 
                 // Limpiar credenciales antes

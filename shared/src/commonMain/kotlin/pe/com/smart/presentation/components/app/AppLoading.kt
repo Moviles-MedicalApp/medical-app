@@ -23,6 +23,12 @@ fun AppLoading(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
 
+        AppLogo(size = 64.dp)
+
+        Spacer(
+            modifier = Modifier.height(20.dp)
+        )
+
         CircularProgressIndicator()
 
         Spacer(

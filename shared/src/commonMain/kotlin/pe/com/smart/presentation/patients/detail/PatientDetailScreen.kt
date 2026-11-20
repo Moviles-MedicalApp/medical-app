@@ -51,11 +51,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import org.koin.compose.koinInject
 import pe.com.smart.core.ui.AppConfirmDialog
 import pe.com.smart.core.ui.AppError
 import pe.com.smart.core.ui.AppLoading
 import pe.com.smart.domain.model.Appointment
 import pe.com.smart.domain.model.Patient
+import pe.com.smart.domain.usecase.AppointmentUseCase
+import pe.com.smart.domain.usecase.PatientUseCase
 import pe.com.smart.presentation.appointments.components.AppointmentStatusBadge
 
 /**
@@ -77,12 +80,12 @@ fun PatientDetailScreen(
     onDeleted: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val patientUseCase: PatientUseCase = koinInject()
+    val appointmentUseCase: AppointmentUseCase = koinInject()
     val viewModel: PatientDetailViewModel = viewModel(
         key = "patient_detail_$patientId"
     ) {
-        PatientDetailViewModel(
-            patientId = patientId
-        )
+        PatientDetailViewModel(patientId, patientUseCase, appointmentUseCase)
     }
 
     val uiState by viewModel.uiState

@@ -59,7 +59,9 @@ import kotlinx.coroutines.launch
 import pe.com.smart.core.ui.AppConfirmDialog
 import pe.com.smart.core.ui.AppError
 import pe.com.smart.core.ui.message.UiMessageManager
-import pe.com.smart.data.remote.ApiProvider
+import org.koin.compose.koinInject
+import pe.com.smart.domain.usecase.DoctorUseCase
+import pe.com.smart.domain.usecase.MedicalScheduleUseCase
 import pe.com.smart.domain.model.Doctor
 import pe.com.smart.domain.model.MedicalSchedule
 
@@ -75,7 +77,10 @@ private data class ManagementState(
  * Conserva los métodos utilizados
  * por la pantalla y ScheduleEditorDialog.
  */
-private class ScheduleManagementViewModel : ViewModel() {
+private class ScheduleManagementViewModel(
+    private val doctorUseCase: DoctorUseCase,
+    private val medicalScheduleUseCase: MedicalScheduleUseCase
+) : ViewModel() {
 
     private val _state = MutableStateFlow(
         ManagementState()
@@ -92,11 +97,11 @@ private class ScheduleManagementViewModel : ViewModel() {
 
             try {
                 val doctorResult =
-                    ApiProvider.doctorRepository
+                    doctorUseCase
                         .getDoctorById(doctorId)
 
                 val schedulesResult =
-                    ApiProvider.medicalScheduleRepository
+                    medicalScheduleUseCase
                         .getSchedulesByDoctor(doctorId)
 
                 _state.value = _state.value.copy(
@@ -141,7 +146,7 @@ private class ScheduleManagementViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 if (schedule != null) {
-                    ApiProvider.medicalScheduleRepository
+                    medicalScheduleUseCase
                         .updateSchedule(
                             schedule.id,
                             days.first(),
@@ -160,7 +165,7 @@ private class ScheduleManagementViewModel : ViewModel() {
                     load(doctorId)
                 } else {
                     val results = days.map { day ->
-                        ApiProvider.medicalScheduleRepository
+                        medicalScheduleUseCase
                             .createSchedule(
                                 day,
                                 start,
@@ -237,7 +242,7 @@ private class ScheduleManagementViewModel : ViewModel() {
 
         viewModelScope.launch {
             try {
-                ApiProvider.medicalScheduleRepository
+                medicalScheduleUseCase
                     .deleteSchedule(schedule.id)
                     .getOrThrow()
 
@@ -268,10 +273,12 @@ fun ScheduleManagementScreen(
     doctorId: Int,
     modifier: Modifier = Modifier
 ) {
+    val doctorUseCase: DoctorUseCase = koinInject()
+    val medicalScheduleUseCase: MedicalScheduleUseCase = koinInject()
     val viewModel: ScheduleManagementViewModel = viewModel(
         key = "schedule_management_$doctorId"
     ) {
-        ScheduleManagementViewModel()
+        ScheduleManagementViewModel(doctorUseCase, medicalScheduleUseCase)
     }
 
     val state by viewModel.state

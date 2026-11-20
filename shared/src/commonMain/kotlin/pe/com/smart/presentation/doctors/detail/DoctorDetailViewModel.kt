@@ -6,11 +6,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import pe.com.smart.data.remote.ApiProvider
-import pe.com.smart.domain.repository.DoctorRepository
+import pe.com.smart.domain.usecase.DoctorUseCase
 
 class DoctorDetailViewModel(
-    private val repository: DoctorRepository = ApiProvider.doctorRepository
+    private val doctorUseCase: DoctorUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DoctorDetailUiState())
@@ -21,7 +20,7 @@ class DoctorDetailViewModel(
         viewModelScope.launch {
             _uiState.value = DoctorDetailUiState(isLoading = true)
 
-            repository.getDoctorById(id)
+            doctorUseCase.getDoctorById(id)
                 .onSuccess { doctor ->
                     _uiState.value = DoctorDetailUiState(
                         doctor = doctor
@@ -47,7 +46,7 @@ class DoctorDetailViewModel(
                 error = null
             )
 
-            repository.deleteDoctor(doctor.id)
+            doctorUseCase.deleteDoctor(doctor.id)
                 .onSuccess {
                     onSuccess()
                 }

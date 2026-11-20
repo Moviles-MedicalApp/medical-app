@@ -18,6 +18,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import org.koin.compose.koinInject
+import pe.com.smart.domain.usecase.PatientUseCase
 import pe.com.smart.core.ui.AppConfirmDialog
 import pe.com.smart.core.ui.AppError
 import pe.com.smart.core.ui.AppLoading
@@ -44,6 +46,7 @@ fun PatientFormScreen(
     // VIEWMODEL
     // =====================================================
 
+    val patientUseCase: PatientUseCase = koinInject()
     val viewModel: PatientFormViewModel = viewModel(
         key = if (patientId == null) {
             "patient_create"
@@ -51,9 +54,7 @@ fun PatientFormScreen(
             "patient_edit_$patientId"
         }
     ) {
-        PatientFormViewModel(
-            patientId = patientId
-        )
+        PatientFormViewModel(patientId, patientUseCase)
     }
 
     // =====================================================

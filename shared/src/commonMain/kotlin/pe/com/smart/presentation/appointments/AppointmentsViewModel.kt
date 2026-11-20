@@ -15,8 +15,11 @@ import kotlinx.coroutines.launch
 import pe.com.smart.core.ui.message.UiMessageManager
 import pe.com.smart.data.local.AccessTokenClaimsDecoder
 import pe.com.smart.data.local.TokenStorage
-import pe.com.smart.data.remote.ApiProvider
 import pe.com.smart.domain.model.Appointment
+import pe.com.smart.domain.usecase.AppointmentUseCase
+import pe.com.smart.domain.usecase.DoctorUseCase
+import pe.com.smart.domain.usecase.MedicalScheduleUseCase
+import pe.com.smart.domain.usecase.PatientUseCase
 
 private enum class AppointmentUserRole {
     ADMIN,
@@ -25,19 +28,12 @@ private enum class AppointmentUserRole {
     UNKNOWN
 }
 
-class AppointmentsViewModel : ViewModel() {
-
-    private val appointmentRepository =
-        ApiProvider.appointmentRepository
-
-    private val doctorRepository =
-        ApiProvider.doctorRepository
-
-    private val patientRepository =
-        ApiProvider.patientRepository
-
-    private val medicalScheduleRepository =
-        ApiProvider.medicalScheduleRepository
+class AppointmentsViewModel(
+    private val appointmentRepository: AppointmentUseCase,
+    private val doctorRepository: DoctorUseCase,
+    private val patientRepository: PatientUseCase,
+    private val medicalScheduleRepository: MedicalScheduleUseCase
+) : ViewModel() {
 
     private val _state = MutableStateFlow(
         AppointmentsUiState()

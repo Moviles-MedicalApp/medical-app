@@ -7,16 +7,15 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import pe.com.smart.core.ui.message.UiMessageManager
-import pe.com.smart.data.remote.ApiProvider
-import pe.com.smart.domain.repository.PatientRepository
 import pe.com.smart.domain.model.Appointment
+import pe.com.smart.domain.usecase.AppointmentUseCase
+import pe.com.smart.domain.usecase.PatientUseCase
 
 class PatientDetailViewModel(
-    private val patientId: Int
+    private val patientId: Int,
+    private val repository: PatientUseCase,
+    private val appointmentUseCase: AppointmentUseCase
 ) : ViewModel() {
-
-    private val repository: PatientRepository =
-        ApiProvider.patientRepository
 
     private val _uiState =
         MutableStateFlow(
@@ -46,7 +45,7 @@ class PatientDetailViewModel(
                 )
                 .onSuccess { patient ->
 
-                    val appointments: List<Appointment> = ApiProvider.appointmentRepository
+                    val appointments: List<Appointment> = appointmentUseCase
                         .getAppointments()
                         .getOrDefault(emptyList<Appointment>())
                         .filter { it.patientId == patientId }

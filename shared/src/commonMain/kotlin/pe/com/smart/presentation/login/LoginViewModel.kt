@@ -6,14 +6,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import pe.com.smart.data.remote.ApiProvider
-import pe.com.smart.data.repository.AuthRepository
+import pe.com.smart.domain.usecase.AuthUseCase
 
-class LoginViewModel : ViewModel() {
-
-    private val repository = AuthRepository(
-        ApiProvider.authApiService
-    )
+class LoginViewModel(
+    private val authUseCase: AuthUseCase
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(
         LoginUiState()
@@ -95,7 +92,7 @@ class LoginViewModel : ViewModel() {
 
         viewModelScope.launch {
 
-            repository
+            authUseCase
                 .login(
                     username = username,
                     password = password

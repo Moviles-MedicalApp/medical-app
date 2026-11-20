@@ -13,18 +13,17 @@ import kotlinx.coroutines.launch
 import pe.com.smart.core.ui.message.UiMessageManager
 import pe.com.smart.data.local.AccessTokenClaimsDecoder
 import pe.com.smart.data.local.TokenStorage
-import pe.com.smart.data.remote.ApiProvider
 import pe.com.smart.data.remote.auth.ApiRequestException
 import pe.com.smart.data.remote.auth.dto.AdminUserDto
 import pe.com.smart.data.remote.auth.dto.AdminUserRequest
 import pe.com.smart.data.remote.auth.dto.AdminUserUpdateRequest
-import pe.com.smart.data.repository.AuthRepository
+import pe.com.smart.domain.usecase.AuthUseCase
+import pe.com.smart.domain.usecase.SpecialityUseCase
 
-class UsersViewModel : ViewModel() {
-
-    private val repository = AuthRepository(
-        ApiProvider.authApiService
-    )
+class UsersViewModel(
+    private val authUseCase: AuthUseCase,
+    private val specialityUseCase: SpecialityUseCase
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(
         UsersUiState(
@@ -56,9 +55,9 @@ class UsersViewModel : ViewModel() {
 
         catalogsJob = viewModelScope.launch {
             try {
-                val rolesResult = repository.roles()
+                val rolesResult = authUseCase.roles()
                 val specialityResult =
-                    ApiProvider.specialityRepository
+                    specialityUseCase
                         .getSpecialities()
 
                 _uiState.update { state ->
@@ -190,7 +189,7 @@ class UsersViewModel : ViewModel() {
             try {
                 val current = _uiState.value
 
-                val result = repository.users(
+                val result = authUseCase.users(
                     search = current.search
                         .trim()
                         .ifBlank { null },
@@ -311,7 +310,7 @@ class UsersViewModel : ViewModel() {
             }
 
             try {
-                val result = repository.availableProfiles(
+                val result = authUseCase.availableProfiles(
                     selectedRole
                 )
 
@@ -436,7 +435,7 @@ class UsersViewModel : ViewModel() {
                     }
                 )
 
-                val created = repository
+                val created = authUseCase
                     .createAdministrativeUser(request)
                     .getOrThrow()
 
@@ -617,7 +616,7 @@ class UsersViewModel : ViewModel() {
                             roles = edit.roles.toList()
                         )
 
-                        val updated = repository
+                        val updated = authUseCase
                             .updateUser(
                                 edit.user.id,
                                 request
@@ -639,7 +638,7 @@ class UsersViewModel : ViewModel() {
                     }
 
                     is UserAction.ChangeStatus -> {
-                        repository.changeUserStatus(
+                        authUseCase.changeUserStatus(
                             edit.user.id,
                             action.status
                         ).getOrThrow()
@@ -659,7 +658,7 @@ class UsersViewModel : ViewModel() {
                     }
 
                     UserAction.Disable -> {
-                        repository.disableUser(
+                        authUseCase.disableUser(
                             edit.user.id
                         ).getOrThrow()
 
@@ -674,7 +673,7 @@ class UsersViewModel : ViewModel() {
                     }
 
                     UserAction.ResetPassword -> {
-                        repository.resetUserPassword(
+                        authUseCase.resetUserPassword(
                             edit.user.id,
                             edit.resetPassword
                         ).getOrThrow()
@@ -727,7 +726,7 @@ class UsersViewModel : ViewModel() {
     // =====================================================
 
     private suspend fun refreshSelectedUser(id: Int) {
-        val result = repository.user(id)
+        val result = authUseCase.user(id)
 
         val updated = result.getOrThrow()
 

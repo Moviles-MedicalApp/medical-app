@@ -25,8 +25,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import org.koin.compose.koinInject
 import pe.com.smart.core.ui.AppConfirmDialog
 import pe.com.smart.core.ui.AppLoading
+import pe.com.smart.domain.usecase.DoctorUseCase
+import pe.com.smart.domain.usecase.SpecialityUseCase
 
 /**
  * Pantalla de creación y edición de médicos.
@@ -51,6 +54,8 @@ fun DoctorFormScreen(
     // VIEWMODEL
     // =====================================================
 
+    val doctorUseCase: DoctorUseCase = koinInject()
+    val specialityUseCase: SpecialityUseCase = koinInject()
     val formViewModel: DoctorFormViewModel = viewModel(
         key = if (doctorId == null) {
             "doctor_create"
@@ -58,7 +63,7 @@ fun DoctorFormScreen(
             "doctor_edit_$doctorId"
         }
     ) {
-        DoctorFormViewModel(doctorId)
+        DoctorFormViewModel(doctorId, doctorUseCase, specialityUseCase)
     }
 
     // =====================================================

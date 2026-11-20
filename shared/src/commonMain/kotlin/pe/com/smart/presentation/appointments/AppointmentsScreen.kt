@@ -66,11 +66,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import org.koin.compose.viewmodel.koinViewModel
 
 import pe.com.smart.core.ui.AppConfirmDialog
 import pe.com.smart.core.ui.AppEmptyState
 import pe.com.smart.core.ui.AppError
+import pe.com.smart.presentation.components.form.AppSearchField
+import pe.com.smart.presentation.appointments.components.AppointmentActionsMenu
 import pe.com.smart.data.local.AccessTokenClaimsDecoder
 import pe.com.smart.data.local.TokenStorage
 import pe.com.smart.domain.model.Appointment
@@ -97,7 +99,7 @@ fun AppointmentsScreen(
     initialPatientId: Int? = null,
     initialDate: String? = null,
     onInitialCreateDismiss: () -> Unit = {},
-    viewModel: AppointmentsViewModel = viewModel()
+    viewModel: AppointmentsViewModel = koinViewModel()
 ) {
     val state by viewModel.state
         .collectAsStateWithLifecycle()
@@ -665,39 +667,12 @@ private fun AppointmentHeader(
             )
         }
 
-        OutlinedTextField(
-            value = state.searchQuery,
-            onValueChange = onQuery,
+        AppSearchField(
+            query = state.searchQuery,
+            onQueryChange = onQuery,
             modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            label = {
-                Text("Buscar cita")
-            },
-            placeholder = {
-                Text("Paciente, médico, fecha...")
-            },
-            leadingIcon = {
-                Icon(
-                    imageVector = Icons.Outlined.Search,
-                    contentDescription = null
-                )
-            },
-            trailingIcon = {
-                if (state.searchQuery.isNotEmpty()) {
-                    IconButton(
-                        onClick = {
-                            onQuery("")
-                        }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Close,
-                            contentDescription =
-                                "Limpiar búsqueda"
-                        )
-                    }
-                }
-            },
-            shape = RoundedCornerShape(14.dp)
+            placeholder = "Paciente, médico o fecha",
+            contentDescription = "Buscar cita"
         )
 
         Row(
@@ -747,10 +722,6 @@ private fun AppointmentCard(
     onCancel: () -> Unit
 ) {
     val colors = MaterialTheme.colorScheme
-
-    var expanded by remember(item.id) {
-        mutableStateOf(false)
-    }
 
     val canEdit = isAdministrator &&
             item.status == "SCHEDULED"
@@ -836,103 +807,17 @@ private fun AppointmentCard(
                     canComplete ||
                     canCancel
                 ) {
-                    Box {
-                        IconButton(
-                            onClick = {
-                                expanded = true
-                            }
-                        ) {
-                            Icon(
-                                imageVector =
-                                    Icons.Outlined.MoreVert,
-                                contentDescription =
-                                    "Acciones de la cita"
-                            )
-                        }
-
-                        DropdownMenu(
-                            expanded = expanded,
-                            onDismissRequest = {
-                                expanded = false
-                            }
-                        ) {
-                            if (canEdit) {
-                                DropdownMenuItem(
-                                    text = {
-                                        Text("Reprogramar")
-                                    },
-                                    leadingIcon = {
-                                        Icon(
-                                            imageVector =
-                                                Icons.Outlined.Edit,
-                                            contentDescription = null
-                                        )
-                                    },
-                                    onClick = {
-                                        expanded = false
-                                        onEdit()
-                                    }
-                                )
-                            }
-
-                            if (canConfirm) {
-                                DropdownMenuItem(
-                                    text = {
-                                        Text("Confirmar")
-                                    },
-                                    leadingIcon = {
-                                        Icon(
-                                            imageVector =
-                                                Icons.Outlined.Check,
-                                            contentDescription = null
-                                        )
-                                    },
-                                    onClick = {
-                                        expanded = false
-                                        onConfirm()
-                                    }
-                                )
-                            }
-
-                            if (canComplete) {
-                                DropdownMenuItem(
-                                    text = {
-                                        Text("Completar")
-                                    },
-                                    leadingIcon = {
-                                        Icon(
-                                            imageVector =
-                                                Icons.Outlined.Check,
-                                            contentDescription = null
-                                        )
-                                    },
-                                    onClick = {
-                                        expanded = false
-                                        onComplete()
-                                    }
-                                )
-                            }
-
-                            if (canCancel) {
-                                DropdownMenuItem(
-                                    text = {
-                                        Text("Cancelar")
-                                    },
-                                    leadingIcon = {
-                                        Icon(
-                                            imageVector =
-                                                Icons.Outlined.Close,
-                                            contentDescription = null
-                                        )
-                                    },
-                                    onClick = {
-                                        expanded = false
-                                        onCancel()
-                                    }
-                                )
-                            }
-                        }
-                    }
+                    AppointmentActionsMenu(
+                        appointmentId = item.id,
+                        canEdit = canEdit,
+                        canConfirm = canConfirm,
+                        canComplete = canComplete,
+                        canCancel = canCancel,
+                        onEdit = onEdit,
+                        onConfirm = onConfirm,
+                        onComplete = onComplete,
+                        onCancel = onCancel
+                    )
                 }
             }
 

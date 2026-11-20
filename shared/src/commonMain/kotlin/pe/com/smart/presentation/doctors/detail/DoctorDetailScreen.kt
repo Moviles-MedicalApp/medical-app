@@ -48,6 +48,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import org.koin.compose.koinInject
+import pe.com.smart.domain.usecase.DoctorUseCase
 import pe.com.smart.core.ui.AppConfirmDialog
 import pe.com.smart.core.ui.AppError
 import pe.com.smart.core.ui.AppLoading
@@ -70,10 +72,11 @@ fun DoctorDetailScreen(
     onProvisionAccount: (Doctor) -> Unit,
     onDeleted: () -> Unit,
     modifier: Modifier = Modifier,
+    doctorUseCase: DoctorUseCase = koinInject(),
     viewModel: DoctorDetailViewModel = viewModel(
         key = "doctor_detail_$doctorId"
     ) {
-        DoctorDetailViewModel()
+        DoctorDetailViewModel(doctorUseCase)
     }
 ) {
     val uiState by viewModel.uiState

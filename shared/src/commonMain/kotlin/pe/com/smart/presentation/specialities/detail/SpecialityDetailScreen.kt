@@ -43,10 +43,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import org.koin.compose.koinInject
 import pe.com.smart.core.ui.AppConfirmDialog
 import pe.com.smart.core.ui.AppError
 import pe.com.smart.core.ui.AppLoading
 import pe.com.smart.domain.model.Speciality
+import pe.com.smart.domain.usecase.SpecialityUseCase
 
 /**
  * Detalle de una especialidad médica.
@@ -65,12 +67,11 @@ fun SpecialityDetailScreen(
     onDeleted: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val specialityUseCase: SpecialityUseCase = koinInject()
     val viewModel: SpecialityDetailViewModel = viewModel(
         key = "speciality_detail_$specialityId"
     ) {
-        SpecialityDetailViewModel(
-            specialityId = specialityId
-        )
+        SpecialityDetailViewModel(specialityId, specialityUseCase)
     }
 
     val uiState by viewModel.uiState

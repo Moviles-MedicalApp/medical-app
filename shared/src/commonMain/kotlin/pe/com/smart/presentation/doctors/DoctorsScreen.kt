@@ -32,7 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import org.koin.compose.viewmodel.koinViewModel
 import pe.com.smart.core.ui.AppEmptyState
 import pe.com.smart.core.ui.AppError
 import pe.com.smart.presentation.doctors.components.DoctorCard
@@ -53,7 +53,7 @@ fun DoctorsScreen(
     onDoctorClick: (Int) -> Unit,
     onCreateDoctorClick: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: DoctorsViewModel = viewModel()
+    viewModel: DoctorsViewModel = koinViewModel()
 ) {
     val uiState by viewModel.uiState
         .collectAsStateWithLifecycle()
