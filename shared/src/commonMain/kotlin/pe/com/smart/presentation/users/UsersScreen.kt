@@ -106,7 +106,10 @@ fun UsersScreen(
             if (state.showCreate) {
                 TextButton(
                     onClick = { viewModel.setCreateVisible(false) },
-                    modifier = Modifier.padding(start = (-8).dp)
+                    // Compose rejects negative padding at runtime. Keeping the
+                    // standard button bounds prevents the create screen from
+                    // crashing as soon as it is rendered.
+                    modifier = Modifier
                 ) { Text("‹  Volver a usuarios") }
 
                 Text(
