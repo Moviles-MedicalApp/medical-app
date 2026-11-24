@@ -401,6 +401,7 @@ private fun Appointment.toSummary(): AppointmentSummary {
         time = "$appointmentDate · $timeRange",
         patientName = patientFullName,
         speciality = specialityName,
-        doctorName = doctorFullName
+        doctorName = doctorFullName,
+        status = status
     )
 }

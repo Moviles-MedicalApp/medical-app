@@ -31,6 +31,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import pe.com.smart.presentation.home.AppointmentSummary
+import pe.com.smart.presentation.appointments.components.AppointmentStatusBadge
 
 /**
  * Tarjeta reutilizable para mostrar la próxima cita.
@@ -135,6 +136,8 @@ private fun AppointmentContent(
                     color = colors.onSurfaceVariant
                 )
             }
+
+            AppointmentStatusBadge(appointment.status)
         }
 
         HorizontalDivider(
@@ -169,7 +172,7 @@ private fun AppointmentContent(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Ver agenda",
+                text = if (isDoctor) "Ver agenda" else "Ver detalle",
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.SemiBold,
                 color = colors.primary
@@ -236,16 +239,16 @@ private fun AppointmentInfoRow(
 private fun EmptyAppointmentContent() {
     val colors = MaterialTheme.colorScheme
 
-    Column(
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Surface(
-            modifier = Modifier.size(56.dp),
-            shape = RoundedCornerShape(18.dp),
+            modifier = Modifier.size(42.dp),
+            shape = RoundedCornerShape(12.dp),
             color = colors.primaryContainer
         ) {
             Box(
@@ -255,23 +258,28 @@ private fun EmptyAppointmentContent() {
                     imageVector = Icons.Outlined.EventAvailable,
                     contentDescription = null,
                     tint = colors.primary,
-                    modifier = Modifier.size(28.dp)
+                    modifier = Modifier.size(22.dp)
                 )
             }
         }
 
-        Text(
-            text = "No hay próximas citas",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.SemiBold,
-            color = colors.onSurface
-        )
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            Text(
+                text = "No hay próximas citas",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = colors.onSurface
+            )
 
-        Text(
-            text = "Cuando tengas una atención programada, aparecerá aquí.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = colors.onSurfaceVariant
-        )
+            Text(
+                text = "Cuando programes una atención, aparecerá aquí.",
+                style = MaterialTheme.typography.bodySmall,
+                color = colors.onSurfaceVariant
+            )
+        }
     }
 }
 

@@ -43,5 +43,6 @@ data class AppointmentSummary(
     val time: String,
     val patientName: String,
     val speciality: String,
-    val doctorName: String
+    val doctorName: String,
+    val status: String = ""
 )

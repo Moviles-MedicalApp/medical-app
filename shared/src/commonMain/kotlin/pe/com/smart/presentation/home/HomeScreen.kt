@@ -53,6 +53,7 @@ import org.koin.compose.viewmodel.koinViewModel
 import pe.com.smart.data.local.AccessTokenClaimsDecoder
 import pe.com.smart.data.local.TokenStorage
 import pe.com.smart.presentation.home.components.NextAppointmentCard
+import pe.com.smart.presentation.home.components.AgendaCard
 import pe.com.smart.presentation.session.SessionIdentityStore
 
 @Composable
@@ -182,8 +183,6 @@ fun HomeScreen(
                                     onAppointmentsClick,
                                 onNewAppointmentClick =
                                     onNewAppointmentClick,
-                                onCalendarClick =
-                                    onCalendarClick,
                                 onRefresh = {
                                     viewModel.retry()
                                 }
@@ -266,38 +265,6 @@ private fun DoctorHomeContent(
 
         item {
             SectionHeader(
-                title = "Resumen de jornada",
-                subtitle = "Atenciones confirmadas"
-            )
-        }
-
-        item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement =
-                    Arrangement.spacedBy(12.dp)
-            ) {
-                DashboardMetricCard(
-                    title = "Confirmadas hoy",
-                    value = state.todayAppointments.toString(),
-                    icon = Icons.Outlined.EventAvailable,
-                    modifier = Modifier.weight(1f),
-                    onClick = onAppointmentsClick
-                )
-
-                DashboardMetricCard(
-                    title = "Próximas",
-                    value =
-                        state.upcomingAppointments.toString(),
-                    icon = Icons.Outlined.Schedule,
-                    modifier = Modifier.weight(1f),
-                    onClick = onAppointmentsClick
-                )
-            }
-        }
-
-        item {
-            SectionHeader(
                 title = "Próxima atención",
                 subtitle =
                     "Tu siguiente consulta confirmada"
@@ -313,13 +280,44 @@ private fun DoctorHomeContent(
         }
 
         item {
-            DashboardActionCard(
-                title = "Mi agenda",
-                description =
-                    "Consultar mis citas confirmadas",
-                icon = Icons.Outlined.CalendarMonth,
+            SectionHeader(
+                title = "Agenda de hoy",
+                subtitle = if (state.todayAppointments == 0) {
+                    "No tienes atenciones programadas para hoy"
+                } else {
+                    "Revisa y prepara tus atenciones del día"
+                }
+            )
+        }
+
+        item {
+            AgendaCard(
+                appointmentsCount = state.todayAppointments,
                 onClick = onAppointmentsClick
             )
+        }
+
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                DashboardInlineMetric(
+                    title = "Hoy",
+                    value = state.todayAppointments.toString(),
+                    icon = Icons.Outlined.EventAvailable,
+                    modifier = Modifier.weight(1f),
+                    onClick = onAppointmentsClick
+                )
+
+                DashboardInlineMetric(
+                    title = "Próximas",
+                    value = state.upcomingAppointments.toString(),
+                    icon = Icons.Outlined.Schedule,
+                    modifier = Modifier.weight(1f),
+                    onClick = onAppointmentsClick
+                )
+            }
         }
     }
 }
@@ -334,54 +332,32 @@ private fun PatientHomeContent(
     firstName: String,
     onAppointmentsClick: () -> Unit,
     onNewAppointmentClick: () -> Unit,
-    onCalendarClick: () -> Unit,
     onRefresh: () -> Unit
 ) {
+    val upcomingLabel = if (state.upcomingAppointments == 1) {
+        "1 próxima"
+    } else {
+        "${state.upcomingAppointments} próximas"
+    }
+
     DashboardList {
         item {
             DashboardGreeting(
                 firstName = firstName,
                 description =
-                    "Gestiona tus consultas médicas.",
+                    if (state.nextAppointment == null) {
+                        "Reserva una consulta cuando la necesites."
+                    } else {
+                        "Tu próxima consulta está programada."
+                    },
                 onRefresh = onRefresh
             )
         }
 
         item {
             SectionHeader(
-                title = "Mis citas",
-                subtitle = "Resumen de tus atenciones"
-            )
-        }
-
-        item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement =
-                    Arrangement.spacedBy(12.dp)
-            ) {
-                DashboardMetricCard(
-                    title = "Citas de hoy",
-                    value = state.todayAppointments.toString(),
-                    icon = Icons.Outlined.EventAvailable,
-                    modifier = Modifier.weight(1f),
-                    onClick = onAppointmentsClick
-                )
-
-                DashboardMetricCard(
-                    title = "Próximas",
-                    value =
-                        state.upcomingAppointments.toString(),
-                    icon = Icons.Outlined.CalendarMonth,
-                    modifier = Modifier.weight(1f),
-                    onClick = onAppointmentsClick
-                )
-            }
-        }
-
-        item {
-            SectionHeader(
-                title = "Próxima consulta"
+                title = "Próxima consulta",
+                subtitle = "${state.todayAppointments} hoy · $upcomingLabel"
             )
         }
 
@@ -412,31 +388,12 @@ private fun PatientHomeContent(
         }
 
         item {
-            SectionHeader(
-                title = "Accesos rápidos"
+            DashboardActionCard(
+                title = "Ver mis citas",
+                description = "Consulta tus próximas citas y tu historial",
+                icon = Icons.Outlined.CalendarMonth,
+                onClick = onAppointmentsClick
             )
-        }
-
-        item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement =
-                    Arrangement.spacedBy(12.dp)
-            ) {
-                DashboardQuickAction(
-                    title = "Mis citas",
-                    icon = Icons.Outlined.CalendarMonth,
-                    modifier = Modifier.weight(1f),
-                    onClick = onAppointmentsClick
-                )
-
-                DashboardQuickAction(
-                    title = "Calendario",
-                    icon = Icons.Outlined.Schedule,
-                    modifier = Modifier.weight(1f),
-                    onClick = onCalendarClick
-                )
-            }
         }
     }
 }
@@ -502,8 +459,8 @@ private fun AdminHomeContent(
 
         item {
             SectionHeader(
-                title = "Resumen operativo",
-                subtitle = "Indicadores generales"
+                title = "Hoy",
+                subtitle = "Lo esencial para la operación diaria"
             )
         }
 
@@ -522,13 +479,44 @@ private fun AdminHomeContent(
                 )
 
                 DashboardMetricCard(
-                    title = "Pacientes",
-                    value = state.patients.toString(),
-                    icon = Icons.Outlined.People,
+                    title = "Por confirmar",
+                    value = state.unconfirmedAppointments.toString(),
+                    icon = Icons.Outlined.EventAvailable,
                     modifier = Modifier.weight(1f),
-                    onClick = onPatientsClick
+                    onClick = onAppointmentsClick
                 )
             }
+        }
+
+        item {
+            AgendaCard(
+                appointmentsCount = state.todayAppointments,
+                onClick = onAppointmentsClick
+            )
+        }
+
+        item {
+            Button(
+                onClick = onNewAppointmentClick,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Add,
+                    contentDescription = null
+                )
+                Text(
+                    text = "Nueva cita",
+                    modifier = Modifier.padding(start = 8.dp)
+                )
+            }
+        }
+
+        item {
+            SectionHeader(
+                title = "Capacidad clínica",
+                subtitle = "Recursos configurados en la clínica"
+            )
         }
 
         item {
@@ -571,7 +559,8 @@ private fun AdminHomeContent(
 
         item {
             SectionHeader(
-                title = "Accesos rápidos"
+                title = "Gestión rápida",
+                subtitle = "Accesos a las tareas más frecuentes"
             )
         }
 
@@ -582,28 +571,37 @@ private fun AdminHomeContent(
                     Arrangement.spacedBy(12.dp)
             ) {
                 DashboardQuickAction(
-                    title = "Nueva cita",
-                    icon = Icons.Outlined.Add,
+                    title = "Pacientes",
+                    icon = Icons.Outlined.People,
                     modifier = Modifier.weight(1f),
-                    onClick = onNewAppointmentClick
+                    onClick = onPatientsClick
                 )
 
                 DashboardQuickAction(
-                    title = "Calendario",
-                    icon = Icons.Outlined.CalendarMonth,
+                    title = "Médicos",
+                    icon = Icons.Outlined.MedicalServices,
                     modifier = Modifier.weight(1f),
-                    onClick = onCalendarClick
+                    onClick = onDoctorsClick
                 )
             }
         }
 
         item {
             DashboardActionCard(
-                title = "Gestionar pacientes",
+                title = "Calendario clínico",
+                description = "Ver la agenda y la disponibilidad del equipo",
+                icon = Icons.Outlined.CalendarMonth,
+                onClick = onCalendarClick
+            )
+        }
+
+        item {
+            DashboardActionCard(
+                title = "Especialidades",
                 description =
-                    "Consultar los pacientes registrados",
-                icon = Icons.Outlined.People,
-                onClick = onPatientsClick
+                    "${state.specialities} especialidades registradas",
+                icon = Icons.Outlined.MedicalServices,
+                onClick = onSpecialitiesClick
             )
         }
     }
@@ -728,12 +726,12 @@ private fun DashboardMetricCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(14.dp),
             verticalArrangement =
-                Arrangement.spacedBy(12.dp)
+                Arrangement.spacedBy(8.dp)
         ) {
             Surface(
-                modifier = Modifier.size(42.dp),
+                modifier = Modifier.size(38.dp),
                 shape = RoundedCornerShape(12.dp),
                 color = colors.primaryContainer
             ) {
@@ -744,7 +742,7 @@ private fun DashboardMetricCard(
                         imageVector = icon,
                         contentDescription = null,
                         tint = colors.primary,
-                        modifier = Modifier.size(22.dp)
+                        modifier = Modifier.size(20.dp)
                     )
                 }
             }
@@ -760,9 +758,66 @@ private fun DashboardMetricCard(
                 text = title,
                 style = MaterialTheme.typography.bodySmall,
                 color = colors.onSurfaceVariant,
-                minLines = 2,
+                minLines = 1,
                 maxLines = 2
             )
+        }
+    }
+}
+
+@Composable
+private fun DashboardInlineMetric(
+    title: String,
+    value: String,
+    icon: ImageVector,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    val colors = MaterialTheme.colorScheme
+
+    Card(
+        onClick = onClick,
+        modifier = modifier,
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = colors.surface),
+        border = BorderStroke(1.dp, colors.outlineVariant)
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Surface(
+                modifier = Modifier.size(34.dp),
+                shape = RoundedCornerShape(10.dp),
+                color = colors.primaryContainer
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = colors.primary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+
+            Column(
+                verticalArrangement = Arrangement.spacedBy(1.dp)
+            ) {
+                Text(
+                    text = value,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = colors.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
         }
     }
 }

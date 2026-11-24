@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Badge
 import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material.icons.outlined.Lock
@@ -34,10 +35,10 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -81,6 +82,18 @@ fun RegistrationScreen(
             .padding(horizontal = 20.dp, vertical = 20.dp),
         verticalArrangement = Arrangement.spacedBy(18.dp)
     ) {
+        IconButton(
+            onClick = onBack,
+            enabled = !state.isLoading,
+            modifier = Modifier.size(48.dp)
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
+                contentDescription = "Volver a iniciar sesión",
+                tint = colors.onSurface
+            )
+        }
+
         // Encabezado.
         Column(
             verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -121,7 +134,7 @@ fun RegistrationScreen(
             description = "Información con la que ingresarás a MedicalApp."
         ) {
             RegistrationInput(
-                label = "Usuario",
+                label = "Usuario *",
                 value = state.username,
                 onValueChange = viewModel::onUsernameChange,
                 icon = Icons.Outlined.Person,
@@ -130,7 +143,7 @@ fun RegistrationScreen(
             )
 
             RegistrationInput(
-                label = "Correo electrónico",
+                label = "Correo electrónico *",
                 value = state.email,
                 onValueChange = viewModel::onEmailChange,
                 icon = Icons.Outlined.Email,
@@ -146,7 +159,7 @@ fun RegistrationScreen(
             description = "Completa los datos de tu perfil de paciente."
         ) {
             RegistrationInput(
-                label = "Nombres",
+                label = "Nombres *",
                 value = state.name,
                 onValueChange = viewModel::onNameChange,
                 icon = Icons.Outlined.Person,
@@ -155,7 +168,7 @@ fun RegistrationScreen(
             )
 
             RegistrationInput(
-                label = "Apellidos",
+                label = "Apellidos *",
                 value = state.lastName,
                 onValueChange = viewModel::onLastNameChange,
                 icon = Icons.Outlined.Person,
@@ -164,7 +177,7 @@ fun RegistrationScreen(
             )
 
             RegistrationInput(
-                label = "DNI",
+                label = "DNI *",
                 value = state.dni,
                 onValueChange = viewModel::onDniChange,
                 icon = Icons.Outlined.Badge,
@@ -191,7 +204,7 @@ fun RegistrationScreen(
             description = "Define una contraseña para proteger tu cuenta."
         ) {
             RegistrationInput(
-                label = "Contraseña",
+                label = "Contraseña *",
                 value = state.password,
                 onValueChange = viewModel::onPasswordChange,
                 icon = Icons.Outlined.Lock,
@@ -202,7 +215,7 @@ fun RegistrationScreen(
             )
 
             RegistrationInput(
-                label = "Confirmar contraseña",
+                label = "Confirmar contraseña *",
                 value = state.confirmation,
                 onValueChange =
                     viewModel::onConfirmationChange,
@@ -233,7 +246,7 @@ fun RegistrationScreen(
             onClick = {
                 viewModel.register(onRegistered)
             },
-            enabled = !state.isLoading,
+            enabled = state.canSubmit && !state.isLoading,
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(14.dp)
         ) {
@@ -248,13 +261,23 @@ fun RegistrationScreen(
             }
         }
 
-        OutlinedButton(
+        Text(
+            text = if (state.canSubmit) {
+                "Todo listo para crear tu cuenta."
+            } else {
+                "Completa los campos obligatorios marcados con * para continuar."
+            },
+            modifier = Modifier.fillMaxWidth(),
+            style = MaterialTheme.typography.bodySmall,
+            color = colors.onSurfaceVariant
+        )
+
+        TextButton(
             onClick = onBack,
             enabled = !state.isLoading,
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(14.dp)
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Volver a iniciar sesión")
+            Text("¿Ya tienes una cuenta? Inicia sesión")
         }
 
         Text(

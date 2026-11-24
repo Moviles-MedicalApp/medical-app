@@ -44,7 +44,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -56,6 +55,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import pe.com.smart.core.ui.AppConfirmDialog
 import pe.com.smart.domain.model.Appointment
+import pe.com.smart.presentation.appointments.components.AppointmentStatusBadge
 
 /**
  * Pantalla de citas del paciente.
@@ -622,9 +622,7 @@ private fun PatientAgendaAppointmentCard(
                 }
             }
 
-            PatientAgendaStatusBadge(
-                status = appointment.status
-            )
+            AppointmentStatusBadge(appointment.status)
 
             if (canCancel) {
                 OutlinedButton(
@@ -711,67 +709,6 @@ private fun PatientAgendaInfoRow(
     }
 }
 
-/**
- * Estado visual de la cita.
- */
-@Composable
-private fun PatientAgendaStatusBadge(
-    status: String
-) {
-    val colors = MaterialTheme.colorScheme
-
-    val label: String
-    val background: Color
-    val foreground: Color
-
-    when (status.uppercase()) {
-        "SCHEDULED" -> {
-            label = "Programada"
-            background = colors.secondaryContainer
-            foreground = colors.onSecondaryContainer
-        }
-
-        "CONFIRMED" -> {
-            label = "Confirmada"
-            background = colors.primaryContainer
-            foreground = colors.onPrimaryContainer
-        }
-
-        "COMPLETED" -> {
-            label = "Completada"
-            background = Color(0xFFE0F6ED)
-            foreground = Color(0xFF167347)
-        }
-
-        "CANCELLED" -> {
-            label = "Cancelada"
-            background = colors.errorContainer
-            foreground = colors.onErrorContainer
-        }
-
-        else -> {
-            label = status
-            background = colors.surfaceVariant
-            foreground = colors.onSurfaceVariant
-        }
-    }
-
-    Surface(
-        shape = RoundedCornerShape(10.dp),
-        color = background
-    ) {
-        Text(
-            text = label,
-            modifier = Modifier.padding(
-                horizontal = 12.dp,
-                vertical = 7.dp
-            ),
-            style = MaterialTheme.typography.labelLarge,
-            fontWeight = FontWeight.SemiBold,
-            color = foreground
-        )
-    }
-}
 
 /**
  * Estado vacío.

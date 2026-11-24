@@ -53,7 +53,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -68,6 +67,7 @@ import pe.com.smart.data.local.AccessTokenClaimsDecoder
 import pe.com.smart.data.local.TokenStorage
 import pe.com.smart.domain.model.Appointment
 import pe.com.smart.presentation.schedules.scheduleFilterChipColors
+import pe.com.smart.presentation.appointments.components.AppointmentStatusBadge
 
 private enum class CalendarViewMode {
     MONTH,
@@ -111,7 +111,9 @@ fun AppointmentCalendarScreen(
     }
 
     var viewMode by remember {
-        mutableStateOf(CalendarViewMode.MONTH)
+        // La agenda diaria es la vista accionable para médicos y personal
+        // administrativo. El mes queda como navegación secundaria.
+        mutableStateOf(CalendarViewMode.DAY)
     }
 
     var selectedStatus by remember {
@@ -159,6 +161,12 @@ fun AppointmentCalendarScreen(
 
     val week = weekDates(selectedDate)
 
+    val upcomingAppointments = visibleAppointments.filter {
+        it.appointmentDate >= today &&
+                it.status in setOf("SCHEDULED", "CONFIRMED")
+    }
+    val remainingUpcomingAppointments = upcomingAppointments.drop(1)
+
     Column(
         modifier = modifier.fillMaxSize()
     ) {
@@ -198,13 +206,27 @@ fun AppointmentCalendarScreen(
                         start = 16.dp,
                         top = 16.dp,
                         end = 16.dp,
-                        bottom = 24.dp
+                        bottom = if (canCreate) 112.dp else 24.dp
                     ),
                     verticalArrangement =
                         Arrangement.spacedBy(16.dp)
                 ) {
                     item {
                         CalendarHeader(
+                            title = if (isPatient) {
+                                "Mis citas"
+                            } else if (isDoctor) {
+                                "Mi agenda"
+                            } else {
+                                "Calendario médico"
+                            },
+                            subtitle = if (isPatient) {
+                                "Revisa tus próximas reservas médicas."
+                            } else if (isDoctor) {
+                                "Consulta las atenciones que tienes asignadas."
+                            } else {
+                                "Organiza y consulta las atenciones."
+                            },
                             selectedDate = selectedDate,
                             viewMode = viewMode,
                             activeFilters = listOfNotNull(
@@ -236,7 +258,9 @@ fun AppointmentCalendarScreen(
                             },
                             onToday = {
                                 selectedDate = today
-                            }
+                            },
+                            showCalendarControls = !isPatient,
+                            showFilters = !isPatient
                         )
                     }
 
@@ -284,7 +308,43 @@ fun AppointmentCalendarScreen(
                         }
                     }
 
-                    when (viewMode) {
+                    if (isPatient) {
+                        item {
+                            PatientNextAppointmentCard(
+                                appointment = upcomingAppointments.firstOrNull(),
+                                onClick = { appointment ->
+                                    detail = appointment
+                                }
+                            )
+                        }
+
+                        if (upcomingAppointments.isEmpty()) {
+                            item {
+                                AppEmptyState(
+                                    title = "No tienes próximas citas",
+                                    message = "Cuando reserves una atención aparecerá aquí."
+                                )
+                            }
+                        } else if (remainingUpcomingAppointments.isNotEmpty()) {
+                            item {
+                                CalendarAgendaTitle(
+                                    title = "Más citas programadas",
+                                    subtitle = "${remainingUpcomingAppointments.size} reservas activas"
+                                )
+                            }
+
+                            items(
+                                remainingUpcomingAppointments,
+                                key = { it.id }
+                            ) { appointment ->
+                                CalendarAppointmentCard(
+                                    appointment = appointment,
+                                    isPatient = true,
+                                    onClick = { detail = appointment }
+                                )
+                            }
+                        }
+                    } else when (viewMode) {
                         CalendarViewMode.MONTH -> {
                             item {
                                 MonthlyCalendar(
@@ -369,7 +429,7 @@ fun AppointmentCalendarScreen(
                                 }
                             }
                         }
-                    } else {
+                    } else if (!isPatient) {
                         item {
                             CalendarAgendaTitle(
                                 title = "Agenda del día",
@@ -430,7 +490,7 @@ fun AppointmentCalendarScreen(
                                 modifier = Modifier.width(8.dp)
                             )
 
-                            Text("Nueva cita")
+                            Text(if (isPatient) "Reservar cita" else "Nueva cita")
                         }
                     }
                 }
@@ -487,6 +547,8 @@ fun AppointmentCalendarScreen(
  */
 @Composable
 private fun CalendarHeader(
+    title: String,
+    subtitle: String,
     selectedDate: String,
     viewMode: CalendarViewMode,
     activeFilters: Int,
@@ -495,7 +557,9 @@ private fun CalendarHeader(
     onDatePicker: () -> Unit,
     onFilters: () -> Unit,
     onViewMode: (CalendarViewMode) -> Unit,
-    onToday: () -> Unit
+    onToday: () -> Unit,
+    showCalendarControls: Boolean,
+    showFilters: Boolean
 ) {
     val colors = MaterialTheme.colorScheme
 
@@ -512,7 +576,7 @@ private fun CalendarHeader(
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Text(
-                    text = "Calendario médico",
+                    text = title,
                     style = MaterialTheme
                         .typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
@@ -520,33 +584,36 @@ private fun CalendarHeader(
                 )
 
                 Text(
-                    text = "Organiza y consulta las atenciones.",
+                    text = subtitle,
                     style = MaterialTheme.typography.bodySmall,
                     color = colors.onSurfaceVariant
                 )
             }
 
-            IconButton(
-                onClick = onFilters
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.FilterList,
-                    contentDescription =
-                        "Filtrar calendario",
-                    tint = colors.primary
-                )
-            }
+            if (showFilters) {
+                IconButton(
+                    onClick = onFilters
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.FilterList,
+                        contentDescription =
+                            "Filtrar calendario",
+                        tint = colors.primary
+                    )
+                }
 
-            if (activeFilters > 0) {
-                Text(
-                    text = activeFilters.toString(),
-                    color = colors.primary,
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold
-                )
+                if (activeFilters > 0) {
+                    Text(
+                        text = activeFilters.toString(),
+                        color = colors.primary,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
         }
 
+        if (showCalendarControls) {
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(18.dp),
@@ -649,6 +716,7 @@ private fun CalendarHeader(
             ) {
                 Text("Hoy")
             }
+        }
         }
     }
 }
@@ -915,6 +983,62 @@ private fun WeeklyCalendar(
     }
 }
 
+/** A patient needs the next action, not a full operational calendar. */
+@Composable
+private fun PatientNextAppointmentCard(
+    appointment: Appointment?,
+    onClick: (Appointment) -> Unit
+) {
+    if (appointment == null) return
+
+    val colors = MaterialTheme.colorScheme
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick(appointment) },
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = colors.primaryContainer
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    "Próxima cita",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = colors.onPrimaryContainer
+                )
+
+                AppointmentStatusBadge(appointment.status)
+            }
+            Text(
+                "${friendlyCalendarDate(appointment.appointmentDate)} · ${appointment.timeRange}",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = colors.onPrimaryContainer
+            )
+            Text(
+                appointment.doctorFullName,
+                style = MaterialTheme.typography.bodyLarge,
+                color = colors.onPrimaryContainer
+            )
+            Text(
+                appointment.specialityName.ifBlank { "Consulta médica" },
+                style = MaterialTheme.typography.bodySmall,
+                color = colors.onPrimaryContainer
+            )
+        }
+    }
+}
+
 @Composable
 private fun CalendarAgendaTitle(
     title: String,
@@ -995,8 +1119,9 @@ private fun CalendarAppointmentCard(
                     )
 
                     Text(
-                        text = appointment.specialityName
-                            .ifBlank { "Consulta médica" },
+                        text = "${shortCalendarDate(appointment.appointmentDate)} · " +
+                                appointment.specialityName
+                                    .ifBlank { "Consulta médica" },
                         style = MaterialTheme
                             .typography.bodySmall,
                         color = colors.onSurfaceVariant
@@ -1026,67 +1151,8 @@ private fun CalendarAppointmentCard(
                 color = colors.onSurfaceVariant
             )
 
-            CalendarStatus(appointment.status)
+            AppointmentStatusBadge(appointment.status)
         }
-    }
-}
-
-@Composable
-private fun CalendarStatus(
-    status: String
-) {
-    val colors = MaterialTheme.colorScheme
-
-    val label: String
-    val background: Color
-    val foreground: Color
-
-    when (status) {
-        "SCHEDULED" -> {
-            label = "Programada"
-            background = colors.secondaryContainer
-            foreground = colors.onSecondaryContainer
-        }
-
-        "CONFIRMED" -> {
-            label = "Confirmada"
-            background = colors.primaryContainer
-            foreground = colors.onPrimaryContainer
-        }
-
-        "COMPLETED" -> {
-            label = "Completada"
-            background = Color(0xFFE0F6ED)
-            foreground = Color(0xFF167347)
-        }
-
-        "CANCELLED" -> {
-            label = "Cancelada"
-            background = colors.errorContainer
-            foreground = colors.onErrorContainer
-        }
-
-        else -> {
-            label = status
-            background = colors.surfaceVariant
-            foreground = colors.onSurfaceVariant
-        }
-    }
-
-    Surface(
-        shape = RoundedCornerShape(8.dp),
-        color = background
-    ) {
-        Text(
-            text = label,
-            modifier = Modifier.padding(
-                horizontal = 10.dp,
-                vertical = 6.dp
-            ),
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.SemiBold,
-            color = foreground
-        )
     }
 }
 
@@ -1293,7 +1359,7 @@ private fun CalendarDetailSheet(
                 style = MaterialTheme.typography.titleSmall
             )
 
-            CalendarStatus(appointment.status)
+            AppointmentStatusBadge(appointment.status)
 
             HorizontalDivider()
 
@@ -1618,6 +1684,20 @@ private fun friendlyCalendarDate(
     val year = parts[0]
 
     return "$day de ${calendarMonths[month - 1]} de $year"
+}
+
+private fun shortCalendarDate(
+    date: String
+): String {
+    val parts = date.split("-")
+    if (parts.size != 3) return date
+
+    val day = parts[2].toIntOrNull() ?: return date
+    val month = parts[1].toIntOrNull() ?: return date
+    val year = parts[0]
+    if (month !in 1..12) return date
+
+    return "$day ${calendarMonths[month - 1].take(3)}. $year"
 }
 
 private fun friendlyWeekRange(
