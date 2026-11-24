@@ -13,10 +13,10 @@ import kotlinx.coroutines.launch
 import pe.com.smart.core.ui.message.UiMessageManager
 import pe.com.smart.data.local.AccessTokenClaimsDecoder
 import pe.com.smart.data.local.TokenStorage
-import pe.com.smart.data.remote.auth.ApiRequestException
-import pe.com.smart.data.remote.auth.dto.AdminUserDto
-import pe.com.smart.data.remote.auth.dto.AdminUserRequest
-import pe.com.smart.data.remote.auth.dto.AdminUserUpdateRequest
+import pe.com.smart.data.remote.api.auth.ApiRequestException
+import pe.com.smart.data.remote.dto.auth.AdminUserDto
+import pe.com.smart.data.remote.dto.auth.AdminUserRequest
+import pe.com.smart.data.remote.dto.auth.AdminUserUpdateRequest
 import pe.com.smart.domain.usecase.AuthUseCase
 import pe.com.smart.domain.usecase.SpecialityUseCase
 

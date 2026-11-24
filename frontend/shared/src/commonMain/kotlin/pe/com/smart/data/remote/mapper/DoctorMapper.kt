@@ -1,6 +1,6 @@
-package pe.com.smart.data.mapper
+package pe.com.smart.data.remote.mapper
 
-import pe.com.smart.data.remote.doctor.dto.DoctorDto
+import pe.com.smart.data.remote.dto.doctor.DoctorDto
 import pe.com.smart.domain.model.Doctor
 
 fun DoctorDto.toDomain(): Doctor {

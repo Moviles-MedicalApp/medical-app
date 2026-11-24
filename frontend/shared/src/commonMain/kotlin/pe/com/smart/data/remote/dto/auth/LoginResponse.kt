@@ -1,4 +1,4 @@
-package pe.com.smart.data.remote.auth.dto
+package pe.com.smart.data.remote.dto.auth
 
 import kotlinx.serialization.Serializable
 

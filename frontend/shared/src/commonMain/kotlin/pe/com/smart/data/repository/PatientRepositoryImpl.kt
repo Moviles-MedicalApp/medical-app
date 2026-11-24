@@ -1,8 +1,8 @@
 package pe.com.smart.data.repository
 
-import pe.com.smart.data.mapper.toDomain
-import pe.com.smart.data.remote.patient.PatientApiService
-import pe.com.smart.data.remote.patient.dto.PatientRequestDto
+import pe.com.smart.data.remote.mapper.toDomain
+import pe.com.smart.data.remote.api.patient.PatientApiService
+import pe.com.smart.data.remote.dto.patient.PatientRequestDto
 import pe.com.smart.domain.model.Patient
 import pe.com.smart.domain.repository.PatientRepository
 

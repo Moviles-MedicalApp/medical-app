@@ -1,4 +1,4 @@
-package pe.com.smart.core.network
+package pe.com.smart.data.remote.api.support
 
 object ApiConstants {
 

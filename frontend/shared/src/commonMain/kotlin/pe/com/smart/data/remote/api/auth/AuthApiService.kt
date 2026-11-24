@@ -1,4 +1,4 @@
-package pe.com.smart.data.remote.auth
+package pe.com.smart.data.remote.api.auth
 
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -11,14 +11,20 @@ import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
-import pe.com.smart.core.network.ApiConstants
-import pe.com.smart.data.remote.auth.dto.LoginRequest
-import pe.com.smart.data.remote.auth.dto.LoginResponse
-import pe.com.smart.data.remote.auth.dto.RefreshRequest
-import pe.com.smart.data.remote.auth.dto.PatientRegistrationRequest
-import pe.com.smart.data.remote.auth.dto.RegisteredUser
-import pe.com.smart.data.remote.auth.dto.AdminUserRequest
-import pe.com.smart.data.remote.auth.dto.*
+import pe.com.smart.data.remote.api.support.ApiConstants
+import pe.com.smart.data.remote.dto.auth.LoginRequest
+import pe.com.smart.data.remote.dto.auth.LoginResponse
+import pe.com.smart.data.remote.dto.auth.RefreshRequest
+import pe.com.smart.data.remote.dto.auth.PatientRegistrationRequest
+import pe.com.smart.data.remote.dto.auth.RegisteredUser
+import pe.com.smart.data.remote.dto.auth.AdminUserRequest
+import pe.com.smart.data.remote.dto.auth.AdminUserDto
+import pe.com.smart.data.remote.dto.auth.AdminUserPageDto
+import pe.com.smart.data.remote.dto.auth.AdminUserUpdateRequest
+import pe.com.smart.data.remote.dto.auth.AvailableProfileDto
+import pe.com.smart.data.remote.dto.auth.PasswordResetRequest
+import pe.com.smart.data.remote.dto.auth.RoleDto
+import pe.com.smart.data.remote.dto.auth.UserStatusRequest
 
 class ApiRequestException(
     val statusCode: Int,
@@ -151,7 +157,11 @@ class AuthApiService(
     suspend fun getUser(id: Int): AdminUserDto =
         client.get("${ApiConstants.AUTH_SERVER}/auth/admin/users/$id").body()
     suspend fun updateUser(id: Int, request: AdminUserUpdateRequest): AdminUserDto = client.patch("${ApiConstants.AUTH_SERVER}/auth/admin/users/$id") { contentType(ContentType.Application.Json); setBody(request) }.body()
-    suspend fun updateUserStatus(id: Int, status: String): AdminUserDto = client.patch("${ApiConstants.AUTH_SERVER}/auth/admin/users/$id/status") { contentType(ContentType.Application.Json); setBody(UserStatusRequest(status)) }.body()
-    suspend fun resetPassword(id: Int, temporaryPassword: String) { client.post("${ApiConstants.AUTH_SERVER}/auth/admin/users/$id/reset-password") { contentType(ContentType.Application.Json); setBody(PasswordResetRequest(temporaryPassword)) } }
+    suspend fun updateUserStatus(id: Int, status: String): AdminUserDto = client.patch("${ApiConstants.AUTH_SERVER}/auth/admin/users/$id/status") { contentType(ContentType.Application.Json); setBody(
+        UserStatusRequest(status)
+    ) }.body()
+    suspend fun resetPassword(id: Int, temporaryPassword: String) { client.post("${ApiConstants.AUTH_SERVER}/auth/admin/users/$id/reset-password") { contentType(ContentType.Application.Json); setBody(
+        PasswordResetRequest(temporaryPassword)
+    ) } }
     suspend fun disableUser(id: Int) { client.delete("${ApiConstants.AUTH_SERVER}/auth/admin/users/$id") }
 }

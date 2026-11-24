@@ -1,10 +1,9 @@
-package pe.com.smart.data.mapper
+package pe.com.smart.data.remote.mapper
 
-import pe.com.smart.data.remote.patient.dto.PatientDto
+import pe.com.smart.data.remote.dto.patient.PatientDto
 import pe.com.smart.domain.model.Patient
 
 fun PatientDto.toDomain(): Patient {
-
     return Patient(
         id = id,
         name = name,
@@ -12,6 +11,6 @@ fun PatientDto.toDomain(): Patient {
         fullName = fullName,
         dni = dni,
         email = email,
-        phone = phone
+        phone = phone.orEmpty()
     )
 }

@@ -1,4 +1,4 @@
-package pe.com.smart.data.remote.schedule.dto
+package pe.com.smart.data.remote.dto.schedule
 
 import kotlinx.serialization.Serializable
 

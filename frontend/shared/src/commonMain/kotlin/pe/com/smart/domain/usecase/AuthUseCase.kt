@@ -1,8 +1,8 @@
 package pe.com.smart.domain.usecase
 
-import pe.com.smart.data.remote.auth.dto.AdminUserRequest
-import pe.com.smart.data.remote.auth.dto.AdminUserUpdateRequest
-import pe.com.smart.data.remote.auth.dto.PatientRegistrationRequest
+import pe.com.smart.data.remote.dto.auth.AdminUserRequest
+import pe.com.smart.data.remote.dto.auth.AdminUserUpdateRequest
+import pe.com.smart.data.remote.dto.auth.PatientRegistrationRequest
 import pe.com.smart.domain.repository.AuthRepository
 
 /** Single entry point for the existing auth operations, following the reference app's use-case layer. */

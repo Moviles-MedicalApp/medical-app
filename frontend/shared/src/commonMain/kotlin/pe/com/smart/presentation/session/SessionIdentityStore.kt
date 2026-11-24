@@ -13,10 +13,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.Serializable
-import pe.com.smart.core.network.ApiConstants
+import pe.com.smart.data.remote.api.support.ApiConstants
 import pe.com.smart.data.local.AccessTokenClaimsDecoder
 import pe.com.smart.data.local.TokenStorage
-import pe.com.smart.data.remote.HttpClientFactory
+import pe.com.smart.data.remote.api.HttpClientFactory
 
 @Serializable
 data class SessionProfile(

@@ -1,9 +1,9 @@
 
 package pe.com.smart.presentation.users
 
-import pe.com.smart.data.remote.auth.dto.AdminUserDto
-import pe.com.smart.data.remote.auth.dto.AdminUserPageDto
-import pe.com.smart.data.remote.auth.dto.AvailableProfileDto
+import pe.com.smart.data.remote.dto.auth.AdminUserDto
+import pe.com.smart.data.remote.dto.auth.AdminUserPageDto
+import pe.com.smart.data.remote.dto.auth.AvailableProfileDto
 import pe.com.smart.domain.model.Speciality
 
 enum class ProfileAvailabilityState {

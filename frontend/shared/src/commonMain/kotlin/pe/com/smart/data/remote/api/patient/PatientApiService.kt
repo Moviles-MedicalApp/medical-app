@@ -1,4 +1,4 @@
-package pe.com.smart.data.remote.patient
+package pe.com.smart.data.remote.api.patient
 
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -9,10 +9,10 @@ import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
-import pe.com.smart.core.network.ApiConstants
-import pe.com.smart.core.network.ensureSuccess
-import pe.com.smart.data.remote.patient.dto.PatientDto
-import pe.com.smart.data.remote.patient.dto.PatientRequestDto
+import pe.com.smart.data.remote.api.support.ApiConstants
+import pe.com.smart.data.remote.api.support.ensureSuccess
+import pe.com.smart.data.remote.dto.patient.PatientDto
+import pe.com.smart.data.remote.dto.patient.PatientRequestDto
 
 class PatientApiService(
     private val client: HttpClient

@@ -1,7 +1,7 @@
 package pe.com.smart.di
 
 import org.koin.dsl.module
-import pe.com.smart.data.remote.ApiProvider
+import pe.com.smart.data.remote.api.ApiProvider
 import pe.com.smart.data.repository.AuthRepositoryImpl
 import pe.com.smart.domain.repository.AppointmentRepository
 import pe.com.smart.domain.repository.AuthRepository

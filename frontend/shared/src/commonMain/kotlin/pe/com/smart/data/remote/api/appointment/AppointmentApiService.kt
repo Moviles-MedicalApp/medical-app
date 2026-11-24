@@ -1,4 +1,4 @@
-package pe.com.smart.data.remote.appointment
+package pe.com.smart.data.remote.api.appointment
 
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -9,13 +9,13 @@ import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
-import pe.com.smart.core.network.ApiConstants
-import pe.com.smart.core.network.ensureSuccess
-import pe.com.smart.data.remote.appointment.dto.AppointmentDto
-import pe.com.smart.data.remote.appointment.dto.AppointmentRequestDto
-import pe.com.smart.data.remote.appointment.dto.AppointmentStatusDto
-import pe.com.smart.data.remote.appointment.dto.CreateOwnAppointmentRequest
-import pe.com.smart.data.remote.appointment.dto.DoctorAgendaDto
+import pe.com.smart.data.remote.api.support.ApiConstants
+import pe.com.smart.data.remote.api.support.ensureSuccess
+import pe.com.smart.data.remote.dto.appointment.AppointmentDto
+import pe.com.smart.data.remote.dto.appointment.AppointmentRequestDto
+import pe.com.smart.data.remote.dto.appointment.AppointmentStatusDto
+import pe.com.smart.data.remote.dto.appointment.CreateOwnAppointmentRequest
+import pe.com.smart.data.remote.dto.appointment.DoctorAgendaDto
 import io.ktor.client.request.parameter
 
 class AppointmentApiService(private val client: HttpClient) {

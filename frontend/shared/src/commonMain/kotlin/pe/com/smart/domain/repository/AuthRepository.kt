@@ -1,14 +1,14 @@
 package pe.com.smart.domain.repository
 
-import pe.com.smart.data.remote.auth.dto.AdminUserRequest
-import pe.com.smart.data.remote.auth.dto.AdminUserUpdateRequest
-import pe.com.smart.data.remote.auth.dto.AvailableProfileDto
-import pe.com.smart.data.remote.auth.dto.LoginResponse
-import pe.com.smart.data.remote.auth.dto.PatientRegistrationRequest
-import pe.com.smart.data.remote.auth.dto.RegisteredUser
-import pe.com.smart.data.remote.auth.dto.RoleDto
-import pe.com.smart.data.remote.auth.dto.AdminUserDto
-import pe.com.smart.data.remote.auth.dto.AdminUserPageDto
+import pe.com.smart.data.remote.dto.auth.AdminUserRequest
+import pe.com.smart.data.remote.dto.auth.AdminUserUpdateRequest
+import pe.com.smart.data.remote.dto.auth.AvailableProfileDto
+import pe.com.smart.data.remote.dto.auth.LoginResponse
+import pe.com.smart.data.remote.dto.auth.PatientRegistrationRequest
+import pe.com.smart.data.remote.dto.auth.RegisteredUser
+import pe.com.smart.data.remote.dto.auth.RoleDto
+import pe.com.smart.data.remote.dto.auth.AdminUserDto
+import pe.com.smart.data.remote.dto.auth.AdminUserPageDto
 
 /** Contract for the existing authentication and user-administration operations. */
 interface AuthRepository {

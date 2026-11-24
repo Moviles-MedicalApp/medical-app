@@ -1,4 +1,4 @@
-package pe.com.smart.data.remote.doctor.dto
+package pe.com.smart.data.remote.dto.doctor
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

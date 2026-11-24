@@ -9,8 +9,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import pe.com.smart.data.remote.auth.ApiRequestException
-import pe.com.smart.data.remote.auth.dto.PatientRegistrationRequest
+import pe.com.smart.data.remote.api.auth.ApiRequestException
+import pe.com.smart.data.remote.dto.auth.PatientRegistrationRequest
 import pe.com.smart.domain.usecase.AuthUseCase
 
 class RegistrationViewModel(

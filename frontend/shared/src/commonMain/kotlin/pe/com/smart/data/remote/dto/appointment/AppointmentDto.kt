@@ -1,4 +1,4 @@
-package pe.com.smart.data.remote.appointment.dto
+package pe.com.smart.data.remote.dto.appointment
 
 import kotlinx.serialization.Serializable
 

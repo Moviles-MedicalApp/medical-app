@@ -1,9 +1,9 @@
 package pe.com.smart.data.repository
 
-import pe.com.smart.core.network.NetworkException
-import pe.com.smart.data.mapper.toDomain
-import pe.com.smart.data.remote.speciality.SpecialityApiService
-import pe.com.smart.data.remote.speciality.dto.SpecialityRequestDto
+import pe.com.smart.data.remote.api.support.NetworkException
+import pe.com.smart.data.remote.mapper.toDomain
+import pe.com.smart.data.remote.api.speciality.SpecialityApiService
+import pe.com.smart.data.remote.dto.speciality.SpecialityRequestDto
 import pe.com.smart.domain.model.Speciality
 import pe.com.smart.domain.repository.SpecialityRepository
 

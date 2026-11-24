@@ -1,6 +1,6 @@
-package pe.com.smart.data.mapper
+package pe.com.smart.data.remote.mapper
 
-import pe.com.smart.data.remote.schedule.dto.MedicalScheduleDto
+import pe.com.smart.data.remote.dto.schedule.MedicalScheduleDto
 import pe.com.smart.domain.model.MedicalSchedule
 
 fun MedicalScheduleDto.toDomain() = MedicalSchedule(

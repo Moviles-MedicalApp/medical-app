@@ -1,13 +1,13 @@
 package pe.com.smart.data.repository
 
 import pe.com.smart.data.local.TokenStorage
-import pe.com.smart.data.remote.auth.AuthApiService
-import pe.com.smart.data.remote.auth.dto.LoginRequest
-import pe.com.smart.data.remote.auth.dto.LoginResponse
-import pe.com.smart.data.remote.auth.dto.PatientRegistrationRequest
-import pe.com.smart.data.remote.auth.dto.RegisteredUser
-import pe.com.smart.data.remote.auth.dto.AdminUserRequest
-import pe.com.smart.data.remote.auth.dto.*
+import pe.com.smart.data.remote.api.auth.AuthApiService
+import pe.com.smart.data.remote.dto.auth.LoginRequest
+import pe.com.smart.data.remote.dto.auth.LoginResponse
+import pe.com.smart.data.remote.dto.auth.PatientRegistrationRequest
+import pe.com.smart.data.remote.dto.auth.RegisteredUser
+import pe.com.smart.data.remote.dto.auth.AdminUserRequest
+import pe.com.smart.data.remote.dto.auth.AdminUserUpdateRequest
 import pe.com.smart.domain.repository.AuthRepository as AuthRepositoryContract
 
 class AuthRepositoryImpl(

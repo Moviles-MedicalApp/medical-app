@@ -1,4 +1,4 @@
-package pe.com.smart.data.remote
+package pe.com.smart.data.remote.api
 
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -13,15 +13,15 @@ import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
-import io.ktor.http.encodedPath
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 import pe.com.smart.data.local.SessionManager
 import pe.com.smart.data.local.TokenStorage
-import pe.com.smart.data.remote.auth.dto.RefreshRequest
-import pe.com.smart.data.remote.auth.dto.LoginResponse
+import pe.com.smart.data.remote.api.support.ApiConstants
+import pe.com.smart.data.remote.dto.auth.RefreshRequest
+import pe.com.smart.data.remote.dto.auth.LoginResponse
 
 object HttpClientFactory {
 
@@ -99,7 +99,7 @@ object HttpClientFactory {
                 else {
                     val refreshToken = TokenStorage.getRefreshToken()
                     if (refreshToken.isNullOrBlank()) false else try {
-                        val response = httpClient.post("${pe.com.smart.core.network.ApiConstants.AUTH_SERVER}/auth/refresh") {
+                        val response = httpClient.post("${ApiConstants.AUTH_SERVER}/auth/refresh") {
                             contentType(ContentType.Application.Json)
                             setBody(RefreshRequest(refreshToken))
                         }

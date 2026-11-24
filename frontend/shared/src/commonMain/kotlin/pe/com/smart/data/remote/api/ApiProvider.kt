@@ -1,11 +1,11 @@
-package pe.com.smart.data.remote
+package pe.com.smart.data.remote.api
 
-import pe.com.smart.data.remote.auth.AuthApiService
-import pe.com.smart.data.remote.appointment.AppointmentApiService
-import pe.com.smart.data.remote.doctor.DoctorApiService
-import pe.com.smart.data.remote.patient.PatientApiService
-import pe.com.smart.data.remote.speciality.SpecialityApiService
-import pe.com.smart.data.remote.schedule.MedicalScheduleApiService
+import pe.com.smart.data.remote.api.auth.AuthApiService
+import pe.com.smart.data.remote.api.appointment.AppointmentApiService
+import pe.com.smart.data.remote.api.doctor.DoctorApiService
+import pe.com.smart.data.remote.api.patient.PatientApiService
+import pe.com.smart.data.remote.api.speciality.SpecialityApiService
+import pe.com.smart.data.remote.api.schedule.MedicalScheduleApiService
 import pe.com.smart.data.repository.DoctorRepositoryImpl
 import pe.com.smart.data.repository.AppointmentRepositoryImpl
 import pe.com.smart.data.repository.MedicalScheduleRepositoryImpl

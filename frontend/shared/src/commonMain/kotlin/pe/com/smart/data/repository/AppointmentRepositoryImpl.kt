@@ -1,9 +1,9 @@
 package pe.com.smart.data.repository
 
-import pe.com.smart.data.remote.appointment.AppointmentApiService
-import pe.com.smart.data.remote.appointment.dto.AppointmentDto
-import pe.com.smart.data.remote.appointment.dto.AppointmentRequestDto
-import pe.com.smart.data.remote.appointment.dto.CreateOwnAppointmentRequest
+import pe.com.smart.data.remote.api.appointment.AppointmentApiService
+import pe.com.smart.data.remote.dto.appointment.AppointmentDto
+import pe.com.smart.data.remote.dto.appointment.AppointmentRequestDto
+import pe.com.smart.data.remote.dto.appointment.CreateOwnAppointmentRequest
 import pe.com.smart.domain.model.Appointment
 import pe.com.smart.domain.repository.AppointmentRepository
 

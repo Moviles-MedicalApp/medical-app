@@ -1,4 +1,4 @@
-package pe.com.smart.data.remote.schedule
+package pe.com.smart.data.remote.api.schedule
 
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -9,10 +9,10 @@ import io.ktor.client.request.delete
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
-import pe.com.smart.core.network.ApiConstants
-import pe.com.smart.core.network.ensureSuccess
-import pe.com.smart.data.remote.schedule.dto.MedicalScheduleDto
-import pe.com.smart.data.remote.schedule.dto.MedicalScheduleRequestDto
+import pe.com.smart.data.remote.api.support.ApiConstants
+import pe.com.smart.data.remote.api.support.ensureSuccess
+import pe.com.smart.data.remote.dto.schedule.MedicalScheduleDto
+import pe.com.smart.data.remote.dto.schedule.MedicalScheduleRequestDto
 
 class MedicalScheduleApiService(private val client: HttpClient) {
     suspend fun getSchedules(): List<MedicalScheduleDto> {

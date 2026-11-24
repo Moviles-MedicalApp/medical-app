@@ -1,8 +1,8 @@
 package pe.com.smart.data.repository
 
-import pe.com.smart.data.mapper.toDomain
-import pe.com.smart.data.remote.schedule.MedicalScheduleApiService
-import pe.com.smart.data.remote.schedule.dto.MedicalScheduleRequestDto
+import pe.com.smart.data.remote.mapper.toDomain
+import pe.com.smart.data.remote.api.schedule.MedicalScheduleApiService
+import pe.com.smart.data.remote.dto.schedule.MedicalScheduleRequestDto
 import pe.com.smart.domain.model.MedicalSchedule
 import pe.com.smart.domain.repository.MedicalScheduleRepository
 
